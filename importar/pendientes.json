@@ -594,7 +594,7 @@
       "telefono_taller": "610 855 565 · 656 852 223",
       "numero": "Albarán 3477",
       "fecha": "2025-11-24",
-      "km": null,
+      "km": 308100,
       "tipo_mantenimiento": "preventivo",
       "titulo": "Alineación de dirección (paralelo)",
       "lineas": [
@@ -644,11 +644,11 @@
       "recomendaciones": [],
       "confianza": 0.8,
       "dudas": [
-        "No figuran kilómetros: introdúcelos (aunque sean aproximados) para que el plan calcule el próximo paralelo.",
         "Sin precio ni total: si lo pagaste, escribe el importe para que cuente en los gastos.",
         "Fecha manuscrita leída como 24/11/2025.",
         "La anotación «Hnos. Alonso» parece un taller al que te derivaron; no se ha registrado como trabajo.",
-        "Asignado al Xsara Picasso por indicación del usuario."
+        "Asignado al Xsara Picasso por indicación del usuario.",
+        "El albarán no indica km: se usan 308.100 km, estimados con el uso medio del coche entre 2019 (221.971) y mayo de 2026 (315.417). Corrígelo si lo sabes."
       ]
     },
     {
@@ -740,7 +740,7 @@
       "dudas": [
         "En la factura, los importes de cada línea incluyen IVA (2,05 € y 26,50 €); aquí se han pasado a base imponible (1,69 € + 21,91 € = 23,60 €) para que cuadre con el desglose de IVA.",
         "El teléfono del taller se lee 825735784; podría ser 925735784 (prefijo de Toledo).",
-        "Kilómetros: la factura indica 315.417 km, pero la orden de reparación 1001028 del mismo día indica 275.407 km (y Aurgi, el 27/07/2026, anotó 300.000). Comprueba el cuentakilómetros y corrige si hace falta."
+        "Kilómetros confirmados: 315.417 (la orden de reparación 1001028 indicaba 275.407 por error)."
       ],
       "id_import": "feuvert-VE2-1071074"
     },
@@ -756,7 +756,7 @@
       "telefono_taller": "925 107 026",
       "numero": "F2607C78000578",
       "fecha": "2026-07-27",
-      "km": 300000,
+      "km": 317068,
       "tipo_mantenimiento": "preventivo",
       "titulo": "Carga de aire acondicionado R134a con detección de fugas y aceite",
       "lineas": [
@@ -834,9 +834,18 @@
       "dudas": [
         "Los importes de la factura incluyen IVA: se han pasado a base imponible (61,97 € − 8,26 € = 53,71 €).",
         "La matrícula impresa es 2064DST, pero tu Xsara es 2864DST: parece una errata del taller.",
-        "Los 300.000 km parecen un valor redondeado, no una lectura exacta del cuentakilómetros.",
-        "La factura incluye detección de fugas, pero no anota ninguna fuga: si el taller te comentó alguna, añádela como aviso."
+        "La factura incluye detección de fugas, pero no anota ninguna fuga: si el taller te comentó alguna, añádela como aviso.",
+        "La factura anota 300.000 km (cifra redondeada e imposible: el 29/05/2026 ya tenía 315.417). Se usan 317.068 km, estimados con tu uso real entre mayo (315.417) y hoy (320.007)."
       ]
+    }
+  ],
+  "lecturas_km": [
+    {
+      "id_import": "km-xsara-2026-11-09",
+      "vehiculo": "Citroën Xsara Picasso",
+      "fecha": "2026-11-09",
+      "km": 320007,
+      "nota": "Cuentakilómetros actual indicado por el usuario"
     }
   ]
 }

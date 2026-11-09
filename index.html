@@ -1905,7 +1905,13 @@ async function markImported(id) { const l = new Set(S.meta.importados || []); l.
 async function checkPending() {
   if (!location.protocol.startsWith('http')) return;
   try { const r = await fetch('importar/pendientes.json?t=' + Date.now(), {cache: 'no-store'}); if (!r.ok) return; const j = await r.json();
-    const done = new Set(S.meta.importados || []); PENDING = (j.facturas || []).filter(f => f.id_import && !done.has(f.id_import)); if (PENDING.length) render();
+    const done = new Set(S.meta.importados || []);
+    // lecturas de cuentakilómetros preparadas: se aplican solas
+    for (const l of (j.lecturas_km || []).filter(l => l.id_import && !done.has(l.id_import))) {
+      const n = String(l.vehiculo || '').toLowerCase(); const v = S.vehicles.find(v => n.includes('picasso') ? /picasso/i.test(v.modelo + v.alias) : n.includes('clk') ? /clk/i.test(v.modelo + v.alias) : false);
+      if (v && num(l.km) != null) { await save('odometer', {id: uid(), vehicleId: v.id, fecha: l.fecha, km: num(l.km), nota: l.nota || 'Lectura indicada a Claude'}); await markImported(l.id_import); toast(`${v.alias}: ${fKm(num(l.km))} registrados`); }
+    }
+    PENDING = (j.facturas || []).filter(f => f.id_import && !done.has(f.id_import)); render();
   } catch (e) {}
 }
 function importPending() { if (!PENDING.length) return; runQueue(PENDING.map(normFactura), []); }
