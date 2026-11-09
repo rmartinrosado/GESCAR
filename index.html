@@ -1640,12 +1640,18 @@ function normFactura(f) {
     let pid = l.plan_id && S.plan.some(p => p.id === l.plan_id && p.vehicleId === vid) ? l.plan_id : null;
     if (!pid && l.operacion_plan) { const on = String(l.operacion_plan).toLowerCase(); pid = S.plan.find(p => p.vehicleId === vid && (p.nombre.toLowerCase() === on || p.nombre.toLowerCase().includes(on) || on.includes(p.nombre.toLowerCase())))?.id || matchPlan(l.operacion_plan, vid); }
     if (!pid && Array.isArray(l.componentes)) l.componente_ids = S.components.filter(c => c.vehicleId === vid && l.componentes.some(n => c.nombre.toLowerCase() === String(n).toLowerCase())).map(c => c.id);
-    if (!pid && !['mano_obra', 'tasa', 'descuento'].includes(l.tipo)) pid = matchPlan(txt, vid);
+    const explicitNull = Object.prototype.hasOwnProperty.call(l, 'operacion_plan') && l.operacion_plan == null && !l.plan_id;
+    if (!pid && !explicitNull && !['mano_obra', 'tasa', 'descuento'].includes(l.tipo)) {
+      const cand = matchPlan(txt, vid); const cp = S.plan.find(p => p.id === cand);
+      // una comprobación/revisión no marca como hecha una sustitución (p. ej. "comprobación filtro" ≠ cambio de filtro)
+      const soloRevision = l.accion === 'revision' || l.accion === 'diagnosis' || /comprobaci|revisi[oó]n|control|verific|chequeo/i.test(l.descripcion || '');
+      if (cp && !(soloRevision && !/^revisi[oó]n|control/i.test(cp.nombre))) pid = cand;
+    }
     let comps = (l.componente_ids || []).filter(id => S.components.some(c => c.id === id && c.vehicleId === vid));
     if (!comps.length && ['pieza', 'otro', undefined, null].includes(l.tipo) && (l.accion || 'sustitucion') === 'sustitucion') comps = matchComps(txt, vid);
     const cant = dec(l.cantidad) ?? 1; const imp = dec(l.importe) ?? ((dec(l.precio_unitario) || 0) * cant * (1 - (dec(l.descuento_pct) || 0) / 100));
     return {descripcion: l.descripcion || '', referencia: l.referencia || '', cantidad: cant, precio_unitario: dec(l.precio_unitario), descuento_pct: dec(l.descuento_pct), importe: Math.round(imp * 100) / 100,
-      tipo: l.tipo || 'pieza', accion: l.accion || (l.tipo === 'mano_obra' ? 'otro' : 'sustitucion'), sistema: l.sistema || '', plan_id: pid, componente_ids: comps};
+      tipo: l.tipo || 'pieza', accion: l.accion || (l.tipo === 'mano_obra' ? 'otro' : 'sustitucion'), sistema: l.sistema || '', plan_id: pid, componente_ids: comps, operacion_plan: l.operacion_plan || null};
   });
   return {vid, matricula: f.matricula || '', taller: f.taller || '', nif: f.nif_taller || '', direccion: f.direccion_taller || '', telefono: f.telefono_taller || '', numero: f.numero || '', fecha: f.fecha || todayISO(), km: num(f.km),
     tipo: ['preventivo', 'correctivo', 'predictivo'].includes(f.tipo_mantenimiento) ? f.tipo_mantenimiento : 'preventivo', titulo: f.titulo || 'Factura ' + (f.numero || ''),
@@ -1690,7 +1696,7 @@ function reviewFactura(F, docs, queue) {
       <div class="f2" style="grid-template-columns:1.3fr .6fr .9fr;gap:6px;margin-top:8px">
         <input data-l="referencia" placeholder="Referencia" value="${esc(l.referencia)}" class="mini"><input data-l="cantidad" inputmode="decimal" value="${l.cantidad ?? 1}" class="mini" title="Cantidad"><input data-l="importe" inputmode="decimal" value="${l.importe ?? ''}" class="mini" title="Importe sin IVA"></div>
       <div class="f2" style="gap:6px;margin-top:6px"><select data-l="tipo" class="mini">${LTIPOS.map(([k, t]) => `<option value="${k}" ${k === l.tipo ? 'selected' : ''}>${t}</option>`).join('')}</select><select data-l="accion" class="mini">${ACCIONES.map(([k, t]) => `<option value="${k}" ${k === l.accion ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
-      <select data-l="plan_id" class="mini" style="margin-top:6px;width:100%;${l.plan_id ? 'border-color:rgba(95,211,154,.5)' : ''}"><option value="">— Sin operación del plan (solo historial) —</option>${plan.map(p => `<option value="${p.id}" ${p.id === l.plan_id ? 'selected' : ''}>✓ ${esc(p.nombre)}</option>`).join('')}</select>
+      <select data-l="plan_id" class="mini" style="margin-top:6px;width:100%;${l.plan_id ? 'border-color:rgba(95,211,154,.5)' : ''}"><option value="">${l.operacion_plan && !l.plan_id && F.nuevas.some(o => o.on && o.nombre.toLowerCase() === String(l.operacion_plan).toLowerCase()) ? '＋ ' + esc(l.operacion_plan) + ' (nueva)' : l.operacion_plan && !l.plan_id ? '↪ ' + esc(l.operacion_plan) + ' (se enlaza al guardar si existe)' : '— Sin operación del plan (solo historial) —'}</option>${plan.map(p => `<option value="${p.id}" ${p.id === l.plan_id ? 'selected' : ''}>✓ ${esc(p.nombre)}</option>`).join('')}</select>
       ${comps.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${comps.map(c => `<label class="pill ${(l.componente_ids || []).includes(c.id) ? 'info' : 'grey'}" style="cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500;font-size:11px"><input type="checkbox" data-c="${c.id}" ${(l.componente_ids || []).includes(c.id) ? 'checked' : ''} style="display:none">${esc(c.nombre.replace('Neumático ', 'Neum. ').replace('Pastillas de freno ', 'Pastillas '))}</label>`).join('')}</div>` : ''}
       </div><button class="btn sec sm" data-del="${i}" aria-label="Quitar línea" style="padding:6px 9px">✕</button></div></div>`).join('')}
     <button class="btn sec sm" id="fxAdd">${ico('plus')} Añadir línea</button>
@@ -1734,6 +1740,13 @@ function reviewFactura(F, docs, queue) {
   body.innerHTML = draw(); bind();
 }
 async function saveFactura(F, docs) {
+  const byName = n => S.plan.find(p => p.vehicleId === F.vid && p.nombre.toLowerCase() === String(n || '').toLowerCase());
+  for (const o of F.nuevas.filter(o => o.on)) {
+    if (byName(o.nombre)) continue;   // ya existe (p. ej. creada por otra factura del mismo lote)
+    if (!o.intervalo_km && !o.intervalo_meses) o.intervalo_meses = 12;
+    await save('plan', {id: uid(), vehicleId: F.vid, nombre: o.nombre, sistema: o.sistema || 'Otros', intKm: num(o.intervalo_km), intMeses: num(o.intervalo_meses), notas: (o.motivo || '') + ' · Añadida desde factura ' + (F.numero || ''), activo: true, baseFecha: F.fecha, baseKm: F.km});
+  }
+  F.lineas.forEach(l => { if (!l.plan_id && l.operacion_plan) { const p = byName(l.operacion_plan); if (p) l.plan_id = p.id; } });
   const tot = F.total ?? null; const base = F.base ?? F.lineas.reduce((a, l) => a + (l.importe || 0), 0);
   const ivaImp = F.iva ?? (tot != null ? Math.round((tot - base) * 100) / 100 : 0);
   const mo = F.lineas.filter(l => l.tipo === 'mano_obra').reduce((a, l) => a + (l.importe || 0), 0);
@@ -1755,10 +1768,6 @@ async function saveFactura(F, docs) {
   const v = S.vehicles.find(x => x.id === F.vid);
   let vch = false; for (const x of vFills(F)) if (F.vOn[x.k] !== false) { v[x.k] = x.v; vch = true; }
   if (vch) await save('vehicles', v);
-  for (const o of F.nuevas.filter(o => o.on)) {
-    if (!o.intervalo_km && !o.intervalo_meses) o.intervalo_meses = 12;
-    await save('plan', {id: uid(), vehicleId: F.vid, nombre: o.nombre, sistema: o.sistema || 'Otros', intKm: num(o.intervalo_km), intMeses: num(o.intervalo_meses), notas: (o.motivo || '') + ' · Añadida desde factura ' + (F.numero || ''), activo: true, baseFecha: F.fecha, baseKm: F.km});
-  }
   for (const r of F.recs.filter(r => r.on)) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: 'Recomendación del taller: ' + r.texto, sistema: r.sistema || 'Otros', gravedad: r.urgencia === 'alta' ? 'grave' : r.urgencia === 'baja' ? 'leve' : 'media', estado: 'diagnostico', sintomas: `Detectado por ${F.taller || 'el taller'} en la factura ${F.numero || ''}`, fotos: []});
   const p = F.prox || {};
   if (F.proxOn !== false && (p.km || p.fecha || p.texto)) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: 'Próxima revisión según taller: ' + [p.km ? fKm(num(p.km)) : '', p.fecha ? fDate(p.fecha) : ''].filter(Boolean).join(' / ') + (p.texto ? ' · ' + p.texto : ''), gravedad: 'leve', estado: 'diagnostico', sintomas: 'Indicado en la factura ' + (F.numero || ''), fotos: []});

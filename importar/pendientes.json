@@ -5,8 +5,8 @@
   "facturas": [
     {
       "id_import": "teodoro-alb-3477",
-      "vehiculo": null,
-      "modelo": null,
+      "vehiculo": "Citroën Xsara Picasso",
+      "modelo": "Citroën Xsara Picasso (N68)",
       "matricula": null,
       "bastidor": null,
       "taller": "Neumáticos Teodoro · Pantoja (Toledo)",
@@ -65,11 +65,11 @@
       "recomendaciones": [],
       "confianza": 0.8,
       "dudas": [
-        "El albarán no indica el vehículo: elige en la revisión si es el Mercedes o el Picasso.",
         "No figuran kilómetros: introdúcelos (aunque sean aproximados) para que el plan calcule el próximo paralelo.",
         "Sin precio ni total: si lo pagaste, escribe el importe para que cuente en los gastos.",
         "Fecha manuscrita leída como 24/11/2025.",
-        "La anotación «Hnos. Alonso» parece un taller al que te derivaron; no se ha registrado como trabajo."
+        "La anotación «Hnos. Alonso» parece un taller al que te derivaron; no se ha registrado como trabajo.",
+        "Asignado al Xsara Picasso por indicación del usuario."
       ]
     },
     {
@@ -132,7 +132,7 @@
       "iva_importe": 4.95,
       "total": 28.55,
       "forma_pago": "Tarjeta",
-      "observaciones": "Garantía legal de reparaciones de taller: 3 meses o 2.000 km. El filtro de habitáculo solo se comprobó (no se sustituyó).",
+      "observaciones": "Garantía legal de reparaciones de taller: 3 meses o 2.000 km. El filtro de habitáculo solo se comprobó (no se sustituyó). Orden de reparación 1001028 (presupuesto 5003032). Ese día también se presupuestó una carga de gas R-456A/R-134A con tapafugas por 110,95 € que no se llegó a hacer (la carga se hizo en Aurgi el 27/07/2026).",
       "averia_reparada": null,
       "datos_vehiculo": {
         "bastidor": null,
@@ -160,9 +160,104 @@
       "confianza": 0.95,
       "dudas": [
         "En la factura, los importes de cada línea incluyen IVA (2,05 € y 26,50 €); aquí se han pasado a base imponible (1,69 € + 21,91 € = 23,60 €) para que cuadre con el desglose de IVA.",
-        "El teléfono del taller se lee 825735784; podría ser 925735784 (prefijo de Toledo)."
+        "El teléfono del taller se lee 825735784; podría ser 925735784 (prefijo de Toledo).",
+        "Kilómetros: la factura indica 315.417 km, pero la orden de reparación 1001028 del mismo día indica 275.407 km (y Aurgi, el 27/07/2026, anotó 300.000). Comprueba el cuentakilómetros y corrige si hace falta."
       ],
       "id_import": "feuvert-VE2-1071074"
+    },
+    {
+      "id_import": "aurgi-F2607C78000578",
+      "vehiculo": "Citroën Xsara Picasso",
+      "modelo": "Citroën Xsara Picasso (N68)",
+      "matricula": null,
+      "bastidor": null,
+      "taller": "Aurgi (Motor Network S.L.U.) · Olías del Rey",
+      "nif_taller": null,
+      "direccion_taller": "C.C. Puerta de Toledo, Local MS2, 45280 Olías del Rey (Toledo)",
+      "telefono_taller": "925 107 026",
+      "numero": "F2607C78000578",
+      "fecha": "2026-07-27",
+      "km": 300000,
+      "tipo_mantenimiento": "preventivo",
+      "titulo": "Carga de aire acondicionado R134a con detección de fugas y aceite",
+      "lineas": [
+        {
+          "descripcion": "Carga A/A R134a + detección de fugas + aceite (1.000 g de gas R134a, incluye impuesto gases fluorados 21,45 €/kg)",
+          "referencia": "9108026",
+          "cantidad": 1,
+          "precio_unitario": 61.97,
+          "descuento_pct": null,
+          "importe": 61.97,
+          "tipo": "servicio",
+          "accion": "recarga",
+          "sistema": "Climatización",
+          "operacion_plan": "Revisión circuito de aire acondicionado",
+          "componentes": []
+        },
+        {
+          "descripcion": "Revisión de seguridad gratuita",
+          "referencia": "34502",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "servicio",
+          "accion": "revision",
+          "sistema": "Otros",
+          "operacion_plan": null,
+          "componentes": []
+        },
+        {
+          "descripcion": "Promoción carga A/A",
+          "referencia": "72346",
+          "cantidad": 1,
+          "precio_unitario": -8.26,
+          "descuento_pct": null,
+          "importe": -8.26,
+          "tipo": "descuento",
+          "accion": "otro",
+          "sistema": "Climatización",
+          "operacion_plan": null,
+          "componentes": []
+        }
+      ],
+      "base_imponible": 53.71,
+      "iva_pct": 21,
+      "iva_importe": 11.28,
+      "total": 64.99,
+      "forma_pago": "Tarjeta",
+      "observaciones": "Factura simplificada. Gas refrigerante del vehículo: R134a (carga de 1.000 g). Garantía Aurgi sobre trabajos realizados en sus talleres.",
+      "averia_reparada": null,
+      "datos_vehiculo": {
+        "bastidor": null,
+        "matricula": null,
+        "aceite_especificacion": null,
+        "capacidad_aceite_l": null,
+        "neumaticos_medida": null,
+        "itv_proxima": null
+      },
+      "proxima_revision": {
+        "km": null,
+        "fecha": null,
+        "texto": null
+      },
+      "nuevas_operaciones": [
+        {
+          "nombre": "Revisión circuito de aire acondicionado",
+          "sistema": "Climatización",
+          "intervalo_km": null,
+          "intervalo_meses": 24,
+          "motivo": "Carga y control de estanqueidad del A/A cada 2 años. Si ya existe en el plan (creada desde la factura de Feu Vert), esta factura se enlaza a ella."
+        }
+      ],
+      "recomendaciones": [],
+      "confianza": 0.92,
+      "dudas": [
+        "Los importes de la factura incluyen IVA: se han pasado a base imponible (61,97 € − 8,26 € = 53,71 €).",
+        "La matrícula impresa es 2064DST, pero tu Xsara es 2864DST: parece una errata del taller.",
+        "Los 300.000 km parecen un valor redondeado, no una lectura exacta del cuentakilómetros.",
+        "La factura incluye detección de fugas, pero no anota ninguna fuga: si el taller te comentó alguna, añádela como aviso."
+      ]
     }
   ]
 }
