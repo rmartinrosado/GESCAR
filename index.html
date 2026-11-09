@@ -1638,10 +1638,12 @@ function normFactura(f) {
   const lineas = (f.lineas || []).map(l => {
     const txt = [l.descripcion, l.referencia].filter(Boolean).join(' ');
     let pid = l.plan_id && S.plan.some(p => p.id === l.plan_id && p.vehicleId === vid) ? l.plan_id : null;
-    if (!pid && l.operacion_plan) { const on = String(l.operacion_plan).toLowerCase(); pid = S.plan.find(p => p.vehicleId === vid && (p.nombre.toLowerCase() === on || p.nombre.toLowerCase().includes(on) || on.includes(p.nombre.toLowerCase())))?.id || matchPlan(l.operacion_plan, vid); }
+    if (!pid && l.operacion_plan) { const on = String(l.operacion_plan).toLowerCase(); pid = S.plan.find(p => p.vehicleId === vid && (p.nombre.toLowerCase() === on || p.nombre.toLowerCase().includes(on) || on.includes(p.nombre.toLowerCase())))?.id
+      || ((f.nuevas_operaciones || []).some(o => String(o.nombre || '').toLowerCase() === on) ? null : matchPlan(l.operacion_plan, vid)); }
     if (!pid && Array.isArray(l.componentes)) l.componente_ids = S.components.filter(c => c.vehicleId === vid && l.componentes.some(n => c.nombre.toLowerCase() === String(n).toLowerCase())).map(c => c.id);
     const explicitNull = Object.prototype.hasOwnProperty.call(l, 'operacion_plan') && l.operacion_plan == null && !l.plan_id;
-    if (!pid && !explicitNull && !['mano_obra', 'tasa', 'descuento'].includes(l.tipo)) {
+    const toNueva = l.operacion_plan && (f.nuevas_operaciones || []).some(o => String(o.nombre || '').toLowerCase() === String(l.operacion_plan).toLowerCase());
+    if (!pid && !explicitNull && !toNueva && !['mano_obra', 'tasa', 'descuento'].includes(l.tipo)) {
       const cand = matchPlan(txt, vid); const cp = S.plan.find(p => p.id === cand);
       // una comprobación/revisión no marca como hecha una sustitución (p. ej. "comprobación filtro" ≠ cambio de filtro)
       const soloRevision = l.accion === 'revision' || l.accion === 'diagnosis' || /comprobaci|revisi[oó]n|control|verific|chequeo/i.test(l.descripcion || '');
@@ -1658,7 +1660,8 @@ function normFactura(f) {
     lineas, base: dec(f.base_imponible), ivaPct: dec(f.iva_pct), iva: dec(f.iva_importe), total: dec(f.total), observaciones: f.observaciones || '', averia: f.averia_reparada || '', confianza: f.confianza, dudas: f.dudas || [],
     datosV: f.datos_vehiculo || {}, prox: f.proxima_revision || {},
     nuevas: (f.nuevas_operaciones || []).filter(o => o && o.nombre && !S.plan.some(p => p.vehicleId === vid && p.nombre.toLowerCase() === String(o.nombre).toLowerCase())).map(o => ({...o, on: true})),
-    recs: (f.recomendaciones || []).filter(r => r && r.texto).map(r => ({...r, on: true})), vOn: {}, _idImp: f.id_import || null};
+    recs: (f.recomendaciones || []).filter(r => r && r.texto).map(r => ({...r, on: true})), vOn: {}, _idImp: f.id_import || null,
+    meds: (f.mediciones || []).map(m => { const n = String(m.componente || '').toLowerCase(); const c = S.components.find(c => c.vehicleId === vid && (c.nombre.toLowerCase() === n || c.nombre.toLowerCase().includes(n))); return c && dec(m.valor) != null ? {compId: c.id, valor: dec(m.valor), unidad: m.unidad || c.medida?.unidad || ''} : null; }).filter(Boolean)};
 }
 function checksFactura(F) {
   const w = []; const v = S.vehicles.find(x => x.id === F.vid);
@@ -1709,7 +1712,8 @@ function reviewFactura(F, docs, queue) {
       <div style="margin-top:8px;font-size:13.5px">${ops.length ? ops.map(id => `✓ ${esc(S.plan.find(p => p.id === id)?.nombre || '')}`).join('<br>') : 'Ninguna operación del plan'}${cps.length ? '<br><br>' + cps.map(id => `↺ ${esc(S.components.find(c => c.id === id)?.nombre || '')} (desgaste a 0%)`).join('<br>') : ''}
       ${vFills(F).filter(x => F.vOn[x.k] !== false).map(x => `<br>✎ Ficha: ${x.l} → ${esc(String(x.v))}`).join('')}
       ${F.nuevas.filter(o => o.on).map(o => `<br>＋ Nueva operación en el plan: ${esc(o.nombre)}`).join('')}
-      ${F.recs.filter(r => r.on).map(r => `<br>⚠︎ Aviso: ${esc(r.texto)}`).join('')}
+      ${F.recs.filter(r => r.on).map(r => `<br>${r.estado === 'resuelta' ? '✓ Recomendación ya resuelta' : '⚠︎ Aviso'}: ${esc(r.texto)}`).join('')}
+      ${(F.meds || []).map(m => `<br>📏 ${esc(S.components.find(c => c.id === m.compId)?.nombre || '')}: ${m.valor} ${esc(m.unidad)}`).join('')}
       <br><br>Historial y gastos: ${fEur(F.total ?? F.lineas.reduce((a, l) => a + l.importe, 0))}${docs.length ? ` · ${docs.length} documento(s) adjunto(s)` : ''}</div></div>
     <button class="btn block" id="fxSave" style="margin-top:6px">${ico('check', 2)} Guardar factura</button>
     ${queue && queue.n > 1 ? `<button class="btn sec block" id="fxSkip" style="margin-top:8px">Saltar esta factura</button>` : ''}`;
@@ -1768,7 +1772,8 @@ async function saveFactura(F, docs) {
   const v = S.vehicles.find(x => x.id === F.vid);
   let vch = false; for (const x of vFills(F)) if (F.vOn[x.k] !== false) { v[x.k] = x.v; vch = true; }
   if (vch) await save('vehicles', v);
-  for (const r of F.recs.filter(r => r.on)) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: 'Recomendación del taller: ' + r.texto, sistema: r.sistema || 'Otros', gravedad: r.urgencia === 'alta' ? 'grave' : r.urgencia === 'baja' ? 'leve' : 'media', estado: 'diagnostico', sintomas: `Detectado por ${F.taller || 'el taller'} en la factura ${F.numero || ''}`, fotos: []});
+  for (const r of F.recs.filter(r => r.on)) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: 'Recomendación del taller: ' + r.texto, sistema: r.sistema || 'Otros', gravedad: r.urgencia === 'alta' ? 'grave' : r.urgencia === 'baja' ? 'leve' : 'media', estado: r.estado === 'resuelta' ? 'resuelta' : 'diagnostico', sintomas: `Detectado por ${F.taller || 'el taller'} en la factura ${F.numero || ''}`, solucion: r.solucion || '', fotos: []});
+  for (const m of F.meds || []) { const c = S.components.find(x => x.id === m.compId); if (!c) continue; c.lecturas = [...(c.lecturas || []).filter(l => !(l.fecha === F.fecha && l.km === F.km)), {fecha: F.fecha, km: F.km, valor: m.valor}].sort((a, b) => (a.km || 0) - (b.km || 0)); await save('components', c); }
   const p = F.prox || {};
   if (F.proxOn !== false && (p.km || p.fecha || p.texto)) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: 'Próxima revisión según taller: ' + [p.km ? fKm(num(p.km)) : '', p.fecha ? fDate(p.fecha) : ''].filter(Boolean).join(' / ') + (p.texto ? ' · ' + p.texto : ''), gravedad: 'leve', estado: 'diagnostico', sintomas: 'Indicado en la factura ' + (F.numero || ''), fotos: []});
   // Datos de la ficha si faltaban

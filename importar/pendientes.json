@@ -4,6 +4,585 @@
   "nota": "Facturas preparadas por Claude. GESCAR las ofrece al abrirse; al importarlas o descartarlas no vuelven a aparecer.",
   "facturas": [
     {
+      "id_import": "feuvert-084274328",
+      "vehiculo": "Citroën Xsara Picasso",
+      "modelo": "Citroën Xsara Picasso (N68)",
+      "matricula": null,
+      "bastidor": null,
+      "taller": "Feu Vert Leganés (C.C. Plaza Nueva)",
+      "nif_taller": "A79783254",
+      "direccion_taller": "C.C. Plaza Nueva, Ctra. M-425 km 2,20, Avda. Pta. del Sol 2ª A, Local Bj 5, 28918 Leganés (Madrid)",
+      "telefono_taller": "914 966 401",
+      "numero": "084274328",
+      "fecha": "2018-11-13",
+      "km": 211488,
+      "tipo_mantenimiento": "preventivo",
+      "titulo": "Revisión integral diésel: aceite y filtros de aceite, aire y gasoil + inspección completa",
+      "lineas": [
+        {
+          "descripcion": "Revisión integral diésel (mano de obra): cambio de aceite y filtros, revisión técnica, control y relleno de niveles, comprobación del sistema de carga",
+          "referencia": "RFVT3",
+          "cantidad": 1,
+          "precio_unitario": 90.91,
+          "descuento_pct": null,
+          "importe": 90.91,
+          "tipo": "mano_obra",
+          "accion": "otro",
+          "sistema": "Motor",
+          "operacion_plan": "Aceite motor y filtro de aceite",
+          "componentes": []
+        },
+        {
+          "descripcion": "Filtro de aceite Bosch P9238 (1457429238)",
+          "referencia": "15337",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "pieza",
+          "accion": "sustitucion",
+          "sistema": "Motor",
+          "operacion_plan": "Aceite motor y filtro de aceite",
+          "componentes": []
+        },
+        {
+          "descripcion": "Filtro de gasoil Bosch N7006 (=N6471)",
+          "referencia": "52238",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "pieza",
+          "accion": "sustitucion",
+          "sistema": "Motor",
+          "operacion_plan": "Filtro de gasoil (y purga de agua)",
+          "componentes": []
+        },
+        {
+          "descripcion": "Filtro de aire Bosch S3160 (1457433160)",
+          "referencia": "15438",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "pieza",
+          "accion": "sustitucion",
+          "sistema": "Motor",
+          "operacion_plan": "Filtro de aire",
+          "componentes": []
+        },
+        {
+          "descripcion": "Aceite Total Quartz 9000 5W-40 · 5 L",
+          "referencia": "73483",
+          "cantidad": 1,
+          "precio_unitario": 46.24,
+          "descuento_pct": null,
+          "importe": 46.24,
+          "tipo": "fluido",
+          "accion": "sustitucion",
+          "sistema": "Motor",
+          "operacion_plan": "Aceite motor y filtro de aceite",
+          "componentes": []
+        },
+        {
+          "descripcion": "Aportación SIGAUS (gestión aceite usado, RD 679/2006)",
+          "referencia": "40984",
+          "cantidad": 5,
+          "precio_unitario": 0.05,
+          "descuento_pct": null,
+          "importe": 0.25,
+          "tipo": "tasa",
+          "accion": "otro",
+          "sistema": "Otros",
+          "operacion_plan": null,
+          "componentes": []
+        },
+        {
+          "descripcion": "Diagnóstico integral del sistema de climatización (gratuito)",
+          "referencia": "899373",
+          "cantidad": 2,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "servicio",
+          "accion": "diagnosis",
+          "sistema": "Climatización",
+          "operacion_plan": "Revisión circuito de aire acondicionado",
+          "componentes": []
+        },
+        {
+          "descripcion": "Revisión integral: control de frenos (pastillas del. 5 mm, tras. 4 mm; discos, latiguillos y freno de mano correctos)",
+          "referencia": "",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "servicio",
+          "accion": "revision",
+          "sistema": "Frenos",
+          "operacion_plan": "Revisión pastillas y discos de freno",
+          "componentes": []
+        },
+        {
+          "descripcion": "Revisión integral: neumáticos (6 mm en las 4 ruedas, puesta a presión, geometría visual correcta)",
+          "referencia": "",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "servicio",
+          "accion": "revision",
+          "sistema": "Neumáticos",
+          "operacion_plan": "Neumáticos: presión, desgaste y rotación",
+          "componentes": []
+        },
+        {
+          "descripcion": "Revisión integral: batería, sistema de carga y correa de accesorios correctos",
+          "referencia": "",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "servicio",
+          "accion": "revision",
+          "sistema": "Electricidad",
+          "operacion_plan": "Batería y sistema de carga",
+          "componentes": []
+        },
+        {
+          "descripcion": "Revisión integral: rótulas de dirección y suspensión, rodamientos, silentblocks y amortiguadores correctos",
+          "referencia": "",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "servicio",
+          "accion": "revision",
+          "sistema": "Suspensión",
+          "operacion_plan": "Rótulas, bieletas y silentblocks del tren delantero",
+          "componentes": []
+        }
+      ],
+      "base_imponible": 137.4,
+      "iva_pct": 21,
+      "iva_importe": 28.85,
+      "total": 166.25,
+      "forma_pago": "Tarjeta",
+      "observaciones": "Hoja de revisión integral (OR C293, mecánico Adam): iluminación, escape, niveles y testigos correctos. Líquido de frenos a SUSTITUIR (punto de ebullición 133 °C, mínimo 155 °C). Refrigerante correcto (congelación −25 °C). Escobilla trasera a sustituir. Neumáticos Michelin R15 (medida 185/…; perfil no anotado), fabricados semana 17/2015 (uno 19/2015), 6 mm. Pastillas: delanteras 5 mm, traseras 4 mm. Aceite usado: 5W-40 (para el 1.6 HDi con FAP, PSA recomienda 5W-30 B71 2290).",
+      "averia_reparada": null,
+      "datos_vehiculo": {
+        "bastidor": null,
+        "matricula": null,
+        "aceite_especificacion": "Total Quartz 9000 5W-40",
+        "capacidad_aceite_l": null,
+        "neumaticos_medida": "185/… R15 (Michelin)",
+        "itv_proxima": null
+      },
+      "proxima_revision": {
+        "km": null,
+        "fecha": null,
+        "texto": null
+      },
+      "nuevas_operaciones": [
+        {
+          "nombre": "Revisión circuito de aire acondicionado",
+          "sistema": "Climatización",
+          "intervalo_km": null,
+          "intervalo_meses": 24,
+          "motivo": "Carga y control de estanqueidad del A/A cada 2 años. Si ya existe en el plan, se enlaza."
+        }
+      ],
+      "recomendaciones": [
+        {
+          "texto": "Cambiar el líquido de frenos (punto de ebullición 133 °C)",
+          "sistema": "Frenos",
+          "urgencia": "alta",
+          "estado": "resuelta",
+          "solucion": "Cambiado en la factura 084306739 del 27/11/2019"
+        }
+      ],
+      "mediciones": [
+        {
+          "componente": "Neumático delantero izquierdo",
+          "valor": 6,
+          "unidad": "mm"
+        },
+        {
+          "componente": "Neumático delantero derecho",
+          "valor": 6,
+          "unidad": "mm"
+        },
+        {
+          "componente": "Neumático trasero izquierdo",
+          "valor": 6,
+          "unidad": "mm"
+        },
+        {
+          "componente": "Neumático trasero derecho",
+          "valor": 6,
+          "unidad": "mm"
+        },
+        {
+          "componente": "Pastillas de freno delanteras",
+          "valor": 5,
+          "unidad": "mm"
+        },
+        {
+          "componente": "Pastillas de freno traseras",
+          "valor": 4,
+          "unidad": "mm"
+        }
+      ],
+      "confianza": 0.93,
+      "dudas": [
+        "El paquete de revisión (110 €) incluye los filtros y la mano de obra: se registra como mano de obra y los filtros a 0 €. Importes convertidos a base sin IVA (90,91 + 46,24 + 0,25 = 137,40 €)."
+      ]
+    },
+    {
+      "id_import": "feuvert-042871025",
+      "vehiculo": "Citroën Xsara Picasso",
+      "modelo": "Citroën Xsara Picasso (N68)",
+      "matricula": null,
+      "bastidor": null,
+      "taller": "Feu Vert Torrevieja (Alicante)",
+      "nif_taller": "A79783254",
+      "direccion_taller": "03180 Torrevieja (Alicante)",
+      "telefono_taller": "965 704 936",
+      "numero": "042871025",
+      "fecha": "2019-05-17",
+      "km": 216809,
+      "tipo_mantenimiento": "preventivo",
+      "titulo": "Carga de aire acondicionado R134a (0,7 kg) y cambio de filtro de habitáculo",
+      "lineas": [
+        {
+          "descripcion": "Carga de aire acondicionado: carga de gas del circuito con gas Eco R-134a (0,7 kg; incluye impuesto gases fluorados Ley 16/2013)",
+          "referencia": "LOTE_456",
+          "cantidad": 1,
+          "precio_unitario": 65.29,
+          "descuento_pct": null,
+          "importe": 65.29,
+          "tipo": "servicio",
+          "accion": "recarga",
+          "sistema": "Climatización",
+          "operacion_plan": "Revisión circuito de aire acondicionado",
+          "componentes": []
+        },
+        {
+          "descripcion": "Gas R-134a (0,7 kg, incluido en la carga)",
+          "referencia": "777001",
+          "cantidad": 0.7,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "fluido",
+          "accion": "recarga",
+          "sistema": "Climatización",
+          "operacion_plan": null,
+          "componentes": []
+        },
+        {
+          "descripcion": "Comprobación filtro habitáculo (gratuita)",
+          "referencia": "899211",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "servicio",
+          "accion": "revision",
+          "sistema": "Climatización",
+          "operacion_plan": null,
+          "componentes": []
+        },
+        {
+          "descripcion": "Filtro de habitáculo Bosch R2354",
+          "referencia": "20914",
+          "cantidad": 1,
+          "precio_unitario": 15.29,
+          "descuento_pct": null,
+          "importe": 15.29,
+          "tipo": "pieza",
+          "accion": "sustitucion",
+          "sistema": "Climatización",
+          "operacion_plan": "Filtro de habitáculo",
+          "componentes": []
+        },
+        {
+          "descripcion": "Cambio filtro habitáculo exterior (mano de obra)",
+          "referencia": "999301",
+          "cantidad": 1,
+          "precio_unitario": 8.26,
+          "descuento_pct": null,
+          "importe": 8.26,
+          "tipo": "mano_obra",
+          "accion": "sustitucion",
+          "sistema": "Climatización",
+          "operacion_plan": "Filtro de habitáculo",
+          "componentes": []
+        }
+      ],
+      "base_imponible": 88.84,
+      "iva_pct": 21,
+      "iva_importe": 18.66,
+      "total": 107.5,
+      "forma_pago": "Tarjeta",
+      "observaciones": "El coche entró con solo 50 g de gas en el circuito del A/A (indica fuga): carga SIN GARANTÍA. Gas R-134a. Se cargaron 0,7 kg.",
+      "averia_reparada": null,
+      "datos_vehiculo": {
+        "bastidor": null,
+        "matricula": null,
+        "aceite_especificacion": null,
+        "capacidad_aceite_l": null,
+        "neumaticos_medida": null,
+        "itv_proxima": null
+      },
+      "proxima_revision": {
+        "km": null,
+        "fecha": null,
+        "texto": null
+      },
+      "nuevas_operaciones": [
+        {
+          "nombre": "Revisión circuito de aire acondicionado",
+          "sistema": "Climatización",
+          "intervalo_km": null,
+          "intervalo_meses": 24,
+          "motivo": "Carga y control de estanqueidad del A/A cada 2 años. Si ya existe en el plan, se enlaza."
+        }
+      ],
+      "recomendaciones": [],
+      "mediciones": [],
+      "confianza": 0.92,
+      "dudas": [
+        "Importes convertidos a base sin IVA (65,29 + 15,29 + 8,26 = 88,84 €). La referencia completa del filtro Bosch está cortada (1 987 432 354 probable)."
+      ]
+    },
+    {
+      "id_import": "feuvert-084306739",
+      "vehiculo": "Citroën Xsara Picasso",
+      "modelo": "Citroën Xsara Picasso (N68)",
+      "matricula": null,
+      "bastidor": null,
+      "taller": "Feu Vert Leganés (C.C. Plaza Nueva)",
+      "nif_taller": "A79783254",
+      "direccion_taller": "C.C. Plaza Nueva, Ctra. M-425 km 2,20, 28918 Leganés (Madrid)",
+      "telefono_taller": "914 966 401",
+      "numero": "084306739",
+      "fecha": "2019-11-27",
+      "km": 221971,
+      "tipo_mantenimiento": "preventivo",
+      "titulo": "Revisión integral diésel + líquido de frenos + refrigerante + 2 bieletas de estabilizadora",
+      "lineas": [
+        {
+          "descripcion": "Revisión integral diésel (mano de obra): cambio de aceite y filtros, revisión técnica, control y relleno de niveles, comprobación del sistema de carga",
+          "referencia": "RFVT3",
+          "cantidad": 1,
+          "precio_unitario": 95.04,
+          "descuento_pct": null,
+          "importe": 95.04,
+          "tipo": "mano_obra",
+          "accion": "otro",
+          "sistema": "Motor",
+          "operacion_plan": "Aceite motor y filtro de aceite",
+          "componentes": []
+        },
+        {
+          "descripcion": "Filtro de aceite Bosch P9238 (1457429238)",
+          "referencia": "15337",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "pieza",
+          "accion": "sustitucion",
+          "sistema": "Motor",
+          "operacion_plan": "Aceite motor y filtro de aceite",
+          "componentes": []
+        },
+        {
+          "descripcion": "Filtro de gasoil Bosch N7006 (0450907006)",
+          "referencia": "52238",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "pieza",
+          "accion": "sustitucion",
+          "sistema": "Motor",
+          "operacion_plan": "Filtro de gasoil (y purga de agua)",
+          "componentes": []
+        },
+        {
+          "descripcion": "Filtro de aire Bosch S3160 (1457433160)",
+          "referencia": "15438",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "pieza",
+          "accion": "sustitucion",
+          "sistema": "Motor",
+          "operacion_plan": "Filtro de aire",
+          "componentes": []
+        },
+        {
+          "descripcion": "Aceite Total Quartz 9000 5W-40 · 5 L",
+          "referencia": "73483",
+          "cantidad": 1,
+          "precio_unitario": 38.8,
+          "descuento_pct": null,
+          "importe": 38.8,
+          "tipo": "fluido",
+          "accion": "sustitucion",
+          "sistema": "Motor",
+          "operacion_plan": "Aceite motor y filtro de aceite",
+          "componentes": []
+        },
+        {
+          "descripcion": "Aportación SIGAUS (RD 679/2006)",
+          "referencia": "40984",
+          "cantidad": 5,
+          "precio_unitario": 0.05,
+          "descuento_pct": null,
+          "importe": 0.25,
+          "tipo": "tasa",
+          "accion": "otro",
+          "sistema": "Otros",
+          "operacion_plan": null,
+          "componentes": []
+        },
+        {
+          "descripcion": "Cambio de líquido de frenos DOT-4 Krafft (mano de obra incluida)",
+          "referencia": "LOTE_175",
+          "cantidad": 1,
+          "precio_unitario": 37.19,
+          "descuento_pct": null,
+          "importe": 37.19,
+          "tipo": "fluido",
+          "accion": "sustitucion",
+          "sistema": "Frenos",
+          "operacion_plan": "Líquido de frenos DOT 4",
+          "componentes": []
+        },
+        {
+          "descripcion": "Cambio de líquido refrigerante: anticongelante Krafft AR50 −37 °C G12+ ×2 (mano de obra incluida)",
+          "referencia": "LOTE_597",
+          "cantidad": 1,
+          "precio_unitario": 37.15,
+          "descuento_pct": null,
+          "importe": 37.15,
+          "tipo": "fluido",
+          "accion": "sustitucion",
+          "sistema": "Refrigeración",
+          "operacion_plan": "Refrigerante",
+          "componentes": []
+        },
+        {
+          "descripcion": "Bieleta de estabilizadora Lemförder 11589 02",
+          "referencia": "89727",
+          "cantidad": 2,
+          "precio_unitario": 20.62,
+          "descuento_pct": null,
+          "importe": 41.24,
+          "tipo": "pieza",
+          "accion": "sustitucion",
+          "sistema": "Suspensión",
+          "operacion_plan": "Rótulas, bieletas y silentblocks del tren delantero",
+          "componentes": []
+        },
+        {
+          "descripcion": "Cambio de rótula de suspensión (mano de obra)",
+          "referencia": "999282",
+          "cantidad": 2,
+          "precio_unitario": 26.445,
+          "descuento_pct": null,
+          "importe": 52.89,
+          "tipo": "mano_obra",
+          "accion": "sustitucion",
+          "sistema": "Suspensión",
+          "operacion_plan": "Rótulas, bieletas y silentblocks del tren delantero",
+          "componentes": []
+        },
+        {
+          "descripcion": "Revisión integral: control de frenos",
+          "referencia": "",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "servicio",
+          "accion": "revision",
+          "sistema": "Frenos",
+          "operacion_plan": "Revisión pastillas y discos de freno",
+          "componentes": []
+        },
+        {
+          "descripcion": "Revisión integral: comprobación del sistema de carga de batería",
+          "referencia": "",
+          "cantidad": 1,
+          "precio_unitario": 0.0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "servicio",
+          "accion": "revision",
+          "sistema": "Electricidad",
+          "operacion_plan": "Batería y sistema de carga",
+          "componentes": []
+        }
+      ],
+      "base_imponible": 302.56,
+      "iva_pct": 21,
+      "iva_importe": 63.54,
+      "total": 366.1,
+      "forma_pago": "Tarjeta",
+      "observaciones": "Comentarios del taller: revisar presión de ruedas y luces; escobillas (limpias) en mal estado; cambio de los 4 amortiguadores; los dos fuelles traseros rotos. Le atendió Noelia, montador Jonathan.",
+      "averia_reparada": null,
+      "datos_vehiculo": {
+        "bastidor": null,
+        "matricula": null,
+        "aceite_especificacion": "Total Quartz 9000 5W-40",
+        "capacidad_aceite_l": null,
+        "neumaticos_medida": null,
+        "itv_proxima": null
+      },
+      "proxima_revision": {
+        "km": null,
+        "fecha": null,
+        "texto": null
+      },
+      "nuevas_operaciones": [
+        {
+          "nombre": "Amortiguadores: revisión de estado y fugas",
+          "sistema": "Suspensión",
+          "intervalo_km": 20000,
+          "intervalo_meses": 12,
+          "motivo": "El taller recomendó cambiar los 4 amortiguadores en 2019; conviene vigilarlos en cada revisión."
+        }
+      ],
+      "recomendaciones": [
+        {
+          "texto": "Cambiar los 4 amortiguadores",
+          "sistema": "Suspensión",
+          "urgencia": "media"
+        },
+        {
+          "texto": "Fuelles (guardapolvos) traseros rotos: sustituir",
+          "sistema": "Suspensión",
+          "urgencia": "media"
+        },
+        {
+          "texto": "Escobillas limpiaparabrisas en mal estado (la trasera ya se marcó para cambiar en 2018)",
+          "sistema": "Carrocería",
+          "urgencia": "baja"
+        }
+      ],
+      "mediciones": [],
+      "confianza": 0.9,
+      "dudas": [
+        "Factura de 2 páginas (líneas + totales). Importes convertidos a base sin IVA y cuadrados con el desglose: 302,56 € + 63,54 € = 366,10 €.",
+        "La foto de la página 1 está algo borrosa en las referencias de los filtros; coinciden con las de 2018."
+      ]
+    },
+    {
       "id_import": "teodoro-alb-3477",
       "vehiculo": "Citroën Xsara Picasso",
       "modelo": "Citroën Xsara Picasso (N68)",
