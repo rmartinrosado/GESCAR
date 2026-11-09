@@ -144,9 +144,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .hstat span{color:var(--muted)}
 .hstat b{font-weight:500;font-variant-numeric:tabular-nums}
 /* Acciones rápidas */
-.qa{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0 4px}
-.qa button{display:flex;flex-direction:column;align-items:center;gap:7px;border:0;background:none;padding:0;font-size:11px;color:var(--muted);letter-spacing:.04em}
-.qa button .tile{width:60px;height:60px;border-radius:20px;transition:transform .2s}
+.qa{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:14px 0 4px}
+.qa button{display:flex;flex-direction:column;align-items:center;gap:7px;border:0;background:none;padding:0;font-size:10.5px;color:var(--muted);letter-spacing:.02em}
+.qa button .tile{width:54px;height:54px;border-radius:18px;transition:transform .2s}
 .qa button:active .tile{transform:scale(.9)}
 .qa button .tile svg{width:26px;height:26px}
 /* Carrusel servicios */
@@ -276,13 +276,13 @@ const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a
 const STATUS = {bad: 'Vencido', warn: 'Próximo', ok: 'Al día', grey: 'Sin datos'};
 
 /* ================= Base de datos (IndexedDB) ================= */
-const STORES = ['vehicles', 'odometer', 'plan', 'services', 'faults', 'components', 'expenses', 'photos', 'meta'];
+const STORES = ['vehicles', 'odometer', 'plan', 'services', 'faults', 'components', 'expenses', 'docs', 'photos', 'meta'];
 const DB = {
   db: null, mem: false,
   open() {
     return new Promise(res => {
       try {
-        const rq = indexedDB.open('gescar', 1);
+        const rq = indexedDB.open('gescar', 2);
         rq.onupgradeneeded = () => STORES.forEach(s => { if (!rq.result.objectStoreNames.contains(s)) rq.result.createObjectStore(s, {keyPath: 'id'}); });
         rq.onsuccess = () => { this.db = rq.result; res(true); };
         rq.onerror = () => { this.mem = true; res(false); };
@@ -304,7 +304,7 @@ const DB = {
   del(s, id) { return this.tx(s, 'readwrite', st => st.delete(id)); },
   clear(s) { return this.tx(s, 'readwrite', st => st.clear()); }
 };
-const S = {vehicles: [], odometer: [], plan: [], services: [], faults: [], components: [], expenses: [], meta: {}};
+const S = {vehicles: [], odometer: [], plan: [], services: [], faults: [], components: [], expenses: [], docs: [], meta: {}};
 const memPhotos = {};
 async function load() {
   for (const s of STORES) { if (s === 'photos') continue; const rows = await DB.all(s); if (s === 'meta') { S.meta = {}; rows.forEach(r => S.meta[r.id] = r.v); } else S[s] = rows; }
@@ -839,7 +839,7 @@ function formVehicle(v) {
     },
     onDelete: isNew ? null : async () => {
       if (!await ask(`Se borrará TODO el historial de ${v.alias}: intervenciones, averías, gastos, plan y fotos.`, 'Borrar todo', true)) return;
-      for (const st of ['odometer', 'plan', 'services', 'faults', 'components', 'expenses']) for (const r of S[st].filter(x => x.vehicleId === v.id)) { for (const ph of r.fotos || []) await delPhoto(ph); await remove(st, r.id); }
+      for (const st of ['odometer', 'plan', 'services', 'faults', 'components', 'expenses', 'docs']) for (const r of S[st].filter(x => x.vehicleId === v.id)) { for (const ph of r.fotos || []) await delPhoto(ph); await remove(st, r.id); }
       await remove('vehicles', v.id); if (S.meta.vid === v.id) await setMeta('vid', S.vehicles[0]?.id || null);
     },
   });
@@ -1327,11 +1327,12 @@ views.inicio = v => {
   <div class="stage" id="stage">${S.vehicles.map(heroSlide).join('')}</div>
   ${S.vehicles.length > 1 ? `<div class="dots">${S.vehicles.map(x => `<i class="${x.id === v.id ? 'on' : ''}"></i>`).join('')}</div>` : ''}
   ${!v.foto && webFoto(v) ? `<p class="credit">Foto: <a href="${webFoto(v).page}" target="_blank" rel="noopener">${esc(webFoto(v).credito)}</a></p>` : ''}
-  ${pendingBox()}
+  ${pendingBox()}${pendingDocsBox()}
   <div class="qa rv">
     <button onclick="formService()"><span class="tile">${ico('wrench')}</span>Intervención</button>
     <button onclick="formFault()"><span class="tile">${ico('alert')}</span>Avería</button>
     <button onclick="captureInvoice()"><span class="tile">${ico('cam')}</span>Factura</button>
+    <button onclick="location.hash='#documentos'"><span class="tile">${ico('shield')}</span>Documentos</button>
     <button onclick="formExpense()"><span class="tile">${ico('euro')}</span>Gasto</button>
   </div>
   ${warn.map(w => `<div class="warnbox rv">${ico('spark')}<div>${w}</div></div>`).join('')}
@@ -1479,9 +1480,9 @@ views.componentes = v => {
 
 /* ---------- MÁS ---------- */
 views.mas = v => `<h2>Más</h2><p class="sub">Herramientas y configuración</p><div class="mgrid">
-  ${[['facturas', 'doc', 'Facturas de taller', 'Importar y completar el plan'], ['vehiculos', 'car', 'Vehículos', 'Fichas, fotos, ITV'], ['km', 'km', 'Kilometraje', 'Lecturas y uso'], ['componentes', 'tire', 'Componentes', 'Desgaste predictivo'], ['gastos', 'euro', 'Gastos', 'Coste y €/km'], ['informes', 'pdf', 'Informes PDF', 'Historial completo'], ['copias', 'cloud', 'Copias', 'Exportar y restaurar'], ['ajustes', 'bell', 'Avisos', 'Notificaciones y umbrales']]
+  ${[['documentos', 'shield', 'Documentos', 'ITV, ficha técnica'], ['facturas', 'doc', 'Facturas de taller', 'Importar y completar el plan'], ['vehiculos', 'car', 'Vehículos', 'Fichas, fotos, ITV'], ['km', 'km', 'Kilometraje', 'Lecturas y uso'], ['componentes', 'tire', 'Componentes', 'Desgaste predictivo'], ['gastos', 'euro', 'Gastos', 'Coste y €/km'], ['informes', 'pdf', 'Informes PDF', 'Historial completo'], ['copias', 'cloud', 'Copias', 'Exportar y restaurar'], ['ajustes', 'bell', 'Avisos', 'Notificaciones y umbrales']]
     .map(([h, i, t, s]) => `<a href="#${h}" class="rv"><span class="tile">${ico(i)}</span><div class="t">${t}</div><div class="s">${s}</div></a>`).join('')}</div>
-  <p class="note" style="text-align:center;margin-top:18px;letter-spacing:.2em">GESCAR · V2.4</p>`;
+  <p class="note" style="text-align:center;margin-top:18px;letter-spacing:.2em">GESCAR · V2.5</p>`;
 
 views.vehiculos = () => `<h2>Vehículos</h2><p class="sub">Cada vehículo con su historial independiente</p>${S.vehicles.map(v => `<div class="card vcard rv" onclick="formVehicle(S.vehicles.find(x=>x.id==='${v.id}'))">
   <div class="vimg">${photoLayer(v)}${carSVG(v, {suf: 'v'})}</div>
@@ -1913,7 +1914,9 @@ async function checkPending() {
       const n = String(l.vehiculo || '').toLowerCase(); const v = S.vehicles.find(v => n.includes('picasso') ? /picasso/i.test(v.modelo + v.alias) : n.includes('clk') ? /clk/i.test(v.modelo + v.alias) : false);
       if (v && num(l.km) != null) { await save('odometer', {id: uid(), vehicleId: v.id, fecha: l.fecha, km: num(l.km), nota: l.nota || 'Lectura indicada a Claude'}); await markImported(l.id_import); toast(`${v.alias}: ${fKm(num(l.km))} registrados`); }
     }
-    PENDING = (j.facturas || []).filter(f => f.id_import && !done.has(f.id_import)); render();
+    PENDING = (j.facturas || []).filter(f => f.id_import && !done.has(f.id_import));
+    try { const r2 = await fetch('importar/documentos.enc.json?t=' + Date.now(), {cache: 'no-store'}); if (r2.ok) { const e = await r2.json(); PENDING_DOCS = e.id_import && !done.has(e.id_import) ? e : null; } } catch (e) {}
+    render();
   } catch (e) {}
 }
 function importPending() { if (!PENDING.length) return; runQueue(PENDING.map(normFactura), []); }
@@ -1921,7 +1924,7 @@ async function discardPending() { if (!await ask(`¿Descartar ${PENDING.length} 
 function pendingBox() {
   if (!PENDING.length) return '';
   return `<div class="card rv" style="background:linear-gradient(135deg,rgba(201,169,110,.22),rgba(201,169,110,.05));border-color:rgba(201,169,110,.45)">
-    <div class="row"><span class="tile">${ico('spark')}</span><div class="grow"><div style="font-weight:600">${PENDING.length} factura(s) preparada(s) por Claude</div><div class="note">${PENDING.map(f => esc((f.taller || 'Taller').split('·')[0].trim() + ' · ' + (f.numero || '') + ' · ' + (f.fecha ? fDate(f.fecha) : ''))).join('<br>')}</div></div></div>
+    <div class="row"><span class="tile">${ico('spark')}</span><div class="grow"><div style="font-weight:600">${PENDING.length} factura(s) preparada(s) por Claude</div><div class="note">${PENDING.slice(0, 3).map(f => esc((f.taller || 'Taller').split('·')[0].trim() + ' · ' + (f.fecha ? fDate(f.fecha) : ''))).join('<br>')}${PENDING.length > 3 ? `<br>… y ${PENDING.length - 3} más` : ''}</div></div></div>
     <div class="grid2" style="margin-top:12px"><button class="btn" onclick="importPending()">${ico('check', 2)} Revisar e importar</button><button class="btn sec" onclick="discardPending()">Descartar</button></div></div>`;
 }
 
@@ -1960,6 +1963,132 @@ views.facturas = v => {
     <div class="r"><b>${fEur(svcCost(s))}</b>${(s.docs || []).length ? `<br><a href="#" onclick="openDoc('${s.docs[0].id}');return false" class="note">Ver original</a>` : ''}</div></div>`).join('') : '<div class="empty">Ninguna factura importada todavía</div>'}</div>
   <p class="note">Consejo: importa las facturas de la más antigua a la más reciente. Cada factura marca como realizadas las operaciones del plan y reinicia el desgaste de los componentes sustituidos; revisa siempre la lectura antes de guardar.</p>`;
 };
+
+/* ===================== DOCUMENTOS PRINCIPALES (ITV, ficha técnica…) ===================== */
+const DOC_TIPOS = [['itv', 'Informe de ITV', 'shield'], ['itvfactura', 'Factura de ITV', 'euro'], ['ficha', 'Ficha técnica', 'car'], ['tarjetaitv', 'Tarjeta / hoja de ITV', 'calendar'], ['permiso', 'Permiso de circulación', 'doc'], ['seguro', 'Seguro', 'shield'], ['otro', 'Otro documento', 'doc']];
+const docTipo = k => DOC_TIPOS.find(t => t[0] === k) || DOC_TIPOS[DOC_TIPOS.length - 1];
+let PENDING_DOCS = null;
+
+views.documentos = v => {
+  const docs = of('docs', v).sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
+  const itvDoc = docs.find(d => d.tipo === 'itv');
+  const dias = v.itv ? daysBetween(todayISO(), v.itv) : null;
+  const st = dias == null ? 'grey' : dias <= 0 ? 'bad' : dias <= 45 ? 'warn' : 'ok';
+  const orden = DOC_TIPOS.map(t => t[0]);
+  return `<h2>Documentos</h2><p class="sub">${esc(v.alias)} · ITV, ficha técnica y documentación</p>
+  ${pendingDocsBox()}
+  <div class="card rv" style="background:linear-gradient(135deg,rgba(201,169,110,.14),rgba(201,169,110,.03));border-color:rgba(201,169,110,.3)">
+    <div class="row"><span class="tile ${st}">${ico('shield')}</span><div class="grow"><div class="eyebrow" style="color:var(--gold)">Próxima ITV</div>
+      <div style="font-size:24px;font-weight:250">${v.itv ? fDate(v.itv) : 'Sin fecha'}</div>
+      <div class="note">${dias == null ? 'Añade el informe de ITV o indica la fecha en la ficha' : dias <= 0 ? '<b style="color:var(--bad)">Caducada</b>' : `Faltan <b style="color:${st === 'warn' ? 'var(--warn)' : 'inherit'}">${dias} días</b>`}${itvDoc?.datos?.resultado ? ' · última: ' + esc(itvDoc.datos.resultado) : ''}</div></div>
+      ${itvDoc ? `<button class="btn sm" onclick="openDoc2('${itvDoc.id}')">Ver</button>` : ''}</div></div>
+  ${docs.length ? `<div class="mgrid">${docs.sort((a, b) => orden.indexOf(a.tipo) - orden.indexOf(b.tipo)).map(d => { const t = docTipo(d.tipo); const cad = d.caducidad ? daysBetween(todayISO(), d.caducidad) : null;
+    return `<a href="#" class="rv" style="padding:0;overflow:hidden" onclick="openDoc2('${d.id}');return false">
+      <div style="height:150px;background:#0d0e11;position:relative;overflow:hidden">${d.fotos?.[0] ? `<img data-ph="${d.fotos[0]}" style="width:100%;height:100%;object-fit:cover;object-position:top;opacity:.92">` : `<div style="display:flex;height:100%;align-items:center;justify-content:center;color:var(--gold)">${ico(t[2])}</div>`}
+        ${d.fotos?.length > 1 ? `<span class="pill" style="position:absolute;right:8px;top:8px;background:rgba(0,0,0,.6);color:#fff">${d.fotos.length} págs.</span>` : ''}</div>
+      <div style="padding:12px 12px 14px"><div class="eyebrow" style="color:var(--gold)">${esc(t[1])}</div><div class="t" style="margin-top:3px">${esc(d.titulo || t[1])}</div>
+      <div class="s">${d.fecha ? fDate(d.fecha) : ''}${cad != null ? ` · ${cad <= 0 ? '<span style="color:var(--bad)">caducado</span>' : 'vence ' + fDate(d.caducidad)}` : ''}</div></div></a>`; }).join('')}</div>`
+    : `<div class="card empty rv">${ico('doc')}<br>Aún no hay documentos guardados</div>`}
+  <button class="btn block" style="margin-top:12px" onclick="formDoc()">${ico('cam')} Añadir documento (foto)</button>
+  <p class="note" style="margin-top:12px">Las fotos se guardan solo en este iPhone y se incluyen en la copia de seguridad completa. Toca un documento para verlo a pantalla completa (doble toque para ampliar).</p>`;
+};
+
+function openDoc2(id) {
+  const d = S.docs.find(x => x.id === id); if (!d) return; const t = docTipo(d.tipo);
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:70;background:#000;display:flex;flex-direction:column;animation:fadeBg .25s';
+  const fotos = d.fotos || [];
+  ov.innerHTML = `<div style="display:flex;align-items:center;gap:10px;padding:calc(var(--safe-t) + 10px) 14px 10px;background:rgba(0,0,0,.85)">
+      <div class="grow" style="flex:1;min-width:0"><div class="eyebrow" style="color:var(--gold)">${esc(t[1])}</div><div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(d.titulo || t[1])}</div></div>
+      <span class="note" id="dvPg">${fotos.length ? '1 / ' + fotos.length : ''}</span>
+      <button class="btn sec sm" id="dvInfo">${ico('doc')}</button><button class="btn sec sm" id="dvX">✕</button></div>
+    <div id="dvStrip" style="flex:1;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch">
+      ${fotos.map(f => `<div class="dvp" style="flex:0 0 100%;scroll-snap-align:center;overflow:auto;display:flex;align-items:center;justify-content:center"><img data-ph="${f}" style="width:100%;height:auto;max-height:none;transition:width .25s"></div>`).join('') || '<div class="empty" style="margin:auto">Sin fotos</div>'}
+    </div>
+    <div id="dvPanel" style="display:none;max-height:45vh;overflow:auto;background:#101216;border-top:1px solid var(--line);padding:14px 16px calc(14px + var(--safe-b))">
+      ${d.fecha ? `<div class="kv"><span>Fecha</span><span>${fDate(d.fecha)}</span>${d.caducidad ? `<span>Validez hasta</span><span>${fDate(d.caducidad)}</span>` : ''}</div>` : ''}
+      ${d.datos ? `<div class="kv" style="margin-top:8px">${Object.entries(d.datos).map(([k, x]) => `<span>${esc(k)}</span><span>${esc(Array.isArray(x) ? x.join(' · ') : x)}</span>`).join('')}</div>` : ''}
+      ${d.notas ? `<p class="note" style="margin-top:10px">${esc(d.notas)}</p>` : ''}
+      <div class="grid2" style="margin-top:12px"><button class="btn sec sm" id="dvEdit">Editar</button><button class="btn sec sm" id="dvShare">Compartir</button></div></div>`;
+  document.body.appendChild(ov); fillThumbs(ov);
+  const strip = ov.querySelector('#dvStrip');
+  strip.addEventListener('scroll', () => { const k = Math.round(strip.scrollLeft / strip.clientWidth); const pg = ov.querySelector('#dvPg'); if (pg && fotos.length) pg.textContent = (k + 1) + ' / ' + fotos.length; }, {passive: true});
+  ov.querySelectorAll('.dvp').forEach(p => { let last = 0; p.addEventListener('click', e => { const now = Date.now(); if (now - last < 320) { const img = p.querySelector('img'); const z = img.style.width === '250%'; img.style.width = z ? '100%' : '250%'; p.style.alignItems = z ? 'center' : 'flex-start'; p.style.justifyContent = z ? 'center' : 'flex-start'; } last = now; }); });
+  ov.querySelector('#dvX').onclick = () => ov.remove();
+  ov.querySelector('#dvInfo').onclick = () => { const p = ov.querySelector('#dvPanel'); p.style.display = p.style.display === 'none' ? 'block' : 'none'; };
+  ov.querySelector('#dvEdit').onclick = () => { ov.remove(); formDoc(d); };
+  ov.querySelector('#dvShare').onclick = async () => {
+    const k = Math.round(strip.scrollLeft / strip.clientWidth); const id2 = fotos[k]; if (!id2) return;
+    const rec = DB.mem ? {blob: memPhotos[id2]} : await DB.get('photos', id2); if (!rec?.blob) return;
+    await shareOrDownload(rec.blob, `${(d.titulo || t[1]).replace(/[^\wáéíóúñÁÉÍÓÚÑ -]/g, '')}_${k + 1}.jpg`, 'image/jpeg');
+  };
+}
+
+function formDoc(d) {
+  const v = curV(); const isNew = !d; d = d || {vehicleId: v.id, tipo: 'itv', fecha: todayISO(), fotos: []};
+  let P;
+  form({
+    title: isNew ? 'Nuevo documento' : 'Documento', vals: d,
+    fields: [
+      {k: 'tipo', l: 'Tipo de documento', type: 'select', opts: DOC_TIPOS.map(([k, l]) => [k, l])},
+      {k: 'titulo', l: 'Título', ph: 'Ej. ITV 2025 · Favorable'},
+      {type: 'row', fields: [{k: 'fecha', l: 'Fecha', type: 'date'}, {k: 'caducidad', l: 'Válido hasta', type: 'date'}]},
+      {k: 'notas', l: 'Notas', type: 'textarea', ph: 'Resultado, defectos, observaciones…'},
+      {type: 'html', html: photoField},
+    ],
+    after: s => { P = photoEditor(s, d.fotos); const lab = s.querySelector('#phBox label'); if (lab) lab.firstChild.textContent = '📷 Fotografiar / añadir páginas'; },
+    onSave: async o => {
+      for (const id of (d.fotos || [])) if (!P.includes(id)) await delPhoto(id);
+      const rec = {...d, ...o, fotos: P, id: d.id || uid()}; await save('docs', rec);
+      if (rec.tipo === 'itv' && rec.caducidad && (!v.itv || rec.caducidad >= v.itv)) { v.itv = rec.caducidad; await save('vehicles', v); }
+      toast('Documento guardado');
+    },
+    onDelete: isNew ? null : async () => { for (const id of d.fotos || []) await delPhoto(id); await remove('docs', d.id); },
+  });
+}
+
+/* ---------- Documentos protegidos preparados por Claude (cifrados AES-GCM) ---------- */
+const b64ToBytes = b => Uint8Array.from(atob(b), c => c.charCodeAt(0));
+async function decryptBundle(j, pass) {
+  const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass.trim()), 'PBKDF2', false, ['deriveKey']);
+  const key = await crypto.subtle.deriveKey({name: 'PBKDF2', salt: b64ToBytes(j.salt), iterations: j.iter, hash: 'SHA-256'}, km, {name: 'AES-GCM', length: 256}, false, ['decrypt']);
+  const plain = await crypto.subtle.decrypt({name: 'AES-GCM', iv: b64ToBytes(j.iv)}, key, b64ToBytes(j.data));
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+function pendingDocsBox() {
+  if (!PENDING_DOCS) return '';
+  return `<div class="card rv" style="background:linear-gradient(135deg,rgba(201,169,110,.22),rgba(201,169,110,.05));border-color:rgba(201,169,110,.45)">
+    <div class="row"><span class="tile">${ico('shield')}</span><div class="grow"><div style="font-weight:600">${esc(PENDING_DOCS.titulo || 'Documentos preparados por Claude')}</div><div class="note">Protegidos con clave: contienen datos personales.</div></div></div>
+    <button class="btn block" style="margin-top:12px" onclick="unlockDocs()">${ico('check', 2)} Introducir clave y guardar</button></div>`;
+}
+function unlockDocs() {
+  const s = sheet({title: 'Documentos protegidos', body: `<p style="margin-top:0">Introduce la clave que te dio Claude en el chat. Los documentos se descifran y se guardan solo en este iPhone.</p>
+    <div class="fld"><label>Clave</label><input id="dkPass" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="palabra-palabra-palabra-0000"></div>
+    <button class="btn block" id="dkGo">Descifrar y guardar</button><p class="note" id="dkMsg" style="margin-top:10px"></p>`});
+  s.querySelector('#dkGo').onclick = async () => {
+    const msg = s.querySelector('#dkMsg'); msg.textContent = 'Descifrando…';
+    let data; try { data = await decryptBundle(PENDING_DOCS, s.querySelector('#dkPass').value); } catch (e) { msg.innerHTML = '<span style="color:var(--bad)">Clave incorrecta.</span>'; return; }
+    try { const n = await importDocsBundle(data); await markImported(PENDING_DOCS.id_import); PENDING_DOCS = null; s.close(); toast(`${n} documento(s) guardados`);
+      const dv = vehByName((data.documentos || [])[0]?.vehiculo); if (dv) await setMeta('vid', dv.id); location.hash = '#documentos'; render(); }
+    catch (e) { console.error(e); msg.innerHTML = '<span style="color:var(--bad)">Error al guardar: ' + esc(e.message) + '</span>'; }
+  };
+}
+const vehByName = n => { n = String(n || '').toLowerCase(); return S.vehicles.find(v => n.includes('picasso') ? /picasso/i.test(v.modelo + v.alias) : n.includes('clk') ? /clk/i.test(v.modelo + v.alias) : false); };
+async function importDocsBundle(data) {
+  let n = 0;
+  for (const dv of data.vehiculos || []) { const v = vehByName(dv.vehiculo); if (!v) continue; let ch = false;
+    for (const [k, val] of Object.entries(dv.campos || {})) if (val && (!v[k] || dv.sobrescribir?.includes(k))) { v[k] = val; ch = true; }
+    if (dv.campos?.itv && (!v.itv || dv.campos.itv > v.itv)) { v.itv = dv.campos.itv; ch = true; }
+    if (ch) await save('vehicles', v); }
+  for (const d of data.documentos || []) { const v = vehByName(d.vehiculo); if (!v) continue;
+    if (S.docs.some(x => x.origen === d.id_import)) continue;
+    const fotos = []; for (const u of d.fotos || []) { const blob = await dataURLToBlob(u); const id = 'ph_' + uid(); if (DB.mem) memPhotos[id] = blob; else await DB.put('photos', {id, blob}); fotos.push(id); }
+    await save('docs', {id: uid(), vehicleId: v.id, tipo: d.tipo, titulo: d.titulo, fecha: d.fecha, caducidad: d.caducidad || null, notas: d.notas || '', datos: d.datos || null, fotos, origen: d.id_import}); n++; }
+  for (const l of data.lecturas_km || []) { const v = vehByName(l.vehiculo); if (v && !S.odometer.some(o => o.vehicleId === v.id && o.fecha === l.fecha)) await save('odometer', {id: uid(), vehicleId: v.id, fecha: l.fecha, km: l.km, nota: l.nota || ''}); }
+  for (const g of data.gastos || []) { const v = vehByName(g.vehiculo); if (v && !S.expenses.some(e => e.origen === g.id_import)) await save('expenses', {id: uid(), vehicleId: v.id, fecha: g.fecha, km: g.km, categoria: g.categoria, concepto: g.concepto, importe: g.importe, origen: g.id_import}); }
+  for (const a of data.avisos || []) { const v = vehByName(a.vehiculo); if (v && !S.faults.some(f => f.origen === a.id_import)) await save('faults', {id: uid(), vehicleId: v.id, fecha: a.fecha, km: a.km, titulo: a.titulo, sistema: a.sistema, gravedad: a.gravedad || 'leve', estado: 'diagnostico', sintomas: a.sintomas || '', fotos: [], origen: a.id_import}); }
+  return n;
+}
 
 /* Botón + y arranque */
 $('#fab').innerHTML = ico('plus', 2);
