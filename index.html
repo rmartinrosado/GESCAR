@@ -101,6 +101,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .hero{position:relative;border-radius:28px;overflow:hidden;min-height:330px;background:radial-gradient(120% 90% at 50% 100%,rgba(255,255,255,.10),transparent 55%),linear-gradient(180deg,#16181d,#0a0b0e);border:1px solid var(--line);isolation:isolate}
 .hero .photo{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.06);animation:kenburns 18s ease-in-out infinite alternate;z-index:-2}
 @keyframes kenburns{to{transform:scale(1.16) translate(-2%,-1%)}}
+.hero.hasPhoto .car,.hero.hasPhoto .glow,.vimg.hasPhoto svg{opacity:0;transition:opacity .6s}
+.hero .photo,.vimg .photo{opacity:0;transition:opacity .9s var(--ease)}.hasPhoto>.photo{opacity:1}
+.credit{text-align:center;font-size:10px;color:var(--muted);margin:2px 0 0;letter-spacing:.04em}.credit a{color:var(--muted)}
 .hero .shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,0) 35%,rgba(0,0,0,.15) 60%,rgba(0,0,0,.85) 100%)}
 .hero .glow{position:absolute;left:10%;right:10%;bottom:70px;height:80px;border-radius:50%;filter:blur(40px);opacity:.45;z-index:-1}
 .hero .car{position:absolute;left:0;right:0;bottom:78px;padding:0 8px;animation:floatIn 1s var(--ease) both}
@@ -1213,6 +1216,23 @@ function topSVG(v) {
   <path d="M100 30V124" stroke="#fff" stroke-opacity=".12"/></svg>`;
 }
 
+/* ---------- Fotos de referencia (Wikimedia Commons, licencia libre) ---------- */
+const FP = f => 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(f) + '?width=3840';
+const FPAGE = f => 'https://commons.wikimedia.org/wiki/File:' + encodeURIComponent(f.replace(/ /g, '_'));
+const WEBFOTOS = [
+  {re: /clk/i, file: 'Mercedes-Benz CLK 270 CDi en Valencia.jpg', credito: 'Wikimedia Commons · licencia libre'},
+  {re: /picasso/i, file: '2005 Citroen Xsara Picasso Desire 2HDi facelift 2.0 Front.jpg', credito: 'Vauxford · CC BY-SA 4.0 · Wikimedia Commons'},
+];
+function webFoto(v) {
+  if (v.fotoWebOff) return null;
+  const m = WEBFOTOS.find(w => w.re.test((v.modelo || '') + ' ' + (v.alias || '')));
+  return m ? {url: FP(m.file), page: FPAGE(m.file), credito: m.credito} : null;
+}
+function photoLayer(v) {
+  if (v.foto) return `<div class="photo" data-bg="${v.foto}"></div>`;
+  const w = webFoto(v); return w ? `<div class="photo" data-url="${w.url}"></div>` : '';
+}
+
 /* ---------- Utilidades de animación ---------- */
 function animateIn(root) {
   const els = root.querySelectorAll('.rv');
@@ -1226,8 +1246,14 @@ function animateIn(root) {
   });
   root.querySelectorAll('.ring .val').forEach(c => { const off = c.dataset.off; requestAnimationFrame(() => requestAnimationFrame(() => c.style.strokeDashoffset = off)); });
 }
+const webOK = {};
 async function heroPhotos(root) {
-  for (const el of root.querySelectorAll('[data-bg]')) { const u = await photoURL(el.dataset.bg); if (u) el.style.backgroundImage = `url("${u}")`; }
+  for (const el of root.querySelectorAll('[data-bg]')) { const u = await photoURL(el.dataset.bg); if (u) { el.style.backgroundImage = `url("${u}")`; el.closest('.hero,.vimg')?.classList.add('hasPhoto'); } }
+  for (const el of root.querySelectorAll('[data-url]')) {
+    const url = el.dataset.url; const show = () => { el.style.backgroundImage = `url("${url}")`; el.closest('.hero,.vimg')?.classList.add('hasPhoto'); };
+    if (webOK[url]) { show(); continue; }
+    const im = new Image(); im.onload = () => { webOK[url] = true; show(); }; im.src = url;
+  }
 }
 
 /* ---------- Salud del vehículo ---------- */
@@ -1273,7 +1299,7 @@ function render() {
 function heroSlide(v) {
   const km = curKm(v);
   return `<div class="slide" data-vid="${v.id}"><div class="hero">
-    ${v.foto ? `<div class="photo" data-bg="${v.foto}"></div>` : `<div class="glow" style="background:${v.color}"></div><div class="car">${carSVG(v)}</div>`}
+    ${photoLayer(v)}<div class="glow" style="background:${v.color}"></div><div class="car">${carSVG(v)}</div>
     <div class="shade"></div>
     <div class="hd"><div class="name"><b>${esc(v.marca || 'Vehículo')}</b>${esc(v.modelo || v.alias)}<br>${v.matricula ? `<span class="plate"><i>E</i>${esc(v.matricula)}</span>` : `<span class="plate" style="opacity:.55" onclick="formVehicle(S.vehicles.find(x=>x.id==='${v.id}'))"><i>E</i>MATRÍCULA</span>`}</div>
       <button class="camBtn" aria-label="Foto del vehículo" onclick="carPhoto('${v.id}')">${ico('cam')}</button></div>
@@ -1297,6 +1323,7 @@ views.inicio = v => {
   return `
   <div class="stage" id="stage">${S.vehicles.map(heroSlide).join('')}</div>
   ${S.vehicles.length > 1 ? `<div class="dots">${S.vehicles.map(x => `<i class="${x.id === v.id ? 'on' : ''}"></i>`).join('')}</div>` : ''}
+  ${!v.foto && webFoto(v) ? `<p class="credit">Foto: <a href="${webFoto(v).page}" target="_blank" rel="noopener">${esc(webFoto(v).credito)}</a></p>` : ''}
   <div class="qa rv">
     <button onclick="formService()"><span class="tile">${ico('wrench')}</span>Intervención</button>
     <button onclick="formFault()"><span class="tile">${ico('alert')}</span>Avería</button>
@@ -1336,12 +1363,16 @@ function bindStage() {
 }
 async function carPhoto(vid) {
   const v = S.vehicles.find(x => x.id === vid);
-  const s = sheet({title: 'Foto de ' + (v.alias || ''), body: `<div class="vcard card" style="margin-bottom:14px"><div class="vimg" style="height:190px">${v.foto ? `<div class="photo" data-bg="${v.foto}"></div>` : carSVG(v, {suf: 'p'})}</div></div>
-    <label class="btn block">${ico('cam')} ${v.foto ? 'Cambiar foto' : 'Hacer o elegir foto'}<input type="file" accept="image/*" hidden id="cpIn"></label>
-    ${v.foto ? `<button class="btn sec block" style="margin-top:10px" id="cpDel">Quitar foto y usar ilustración</button>` : ''}
+  const s = sheet({title: 'Foto de ' + (v.alias || ''), body: `<div class="vcard card" style="margin-bottom:14px"><div class="vimg" style="height:190px">${photoLayer(v)}${carSVG(v, {suf: 'p'})}</div></div>
+    <label class="btn block">${ico('cam')} ${v.foto ? 'Cambiar mi foto' : 'Poner una foto mía'}<input type="file" accept="image/*" hidden id="cpIn"></label>
+    ${v.foto ? `<button class="btn sec block" style="margin-top:10px" id="cpDel">Quitar mi foto</button>` : ''}
+    ${!v.foto && webFoto(v) ? `<button class="btn sec block" style="margin-top:10px" id="cpWeb">Quitar foto de referencia y usar ilustración</button><p class="note" style="margin-top:10px">Foto de referencia del modelo: <a href="${webFoto(v).page}" target="_blank" rel="noopener">${esc(webFoto(v).credito)}</a></p>` : ''}
+    ${!v.foto && v.fotoWebOff && WEBFOTOS.some(w => w.re.test((v.modelo || '') + ' ' + (v.alias || ''))) ? `<button class="btn sec block" style="margin-top:10px" id="cpWebOn">Volver a la foto de referencia</button>` : ''}
     <p class="note" style="margin-top:12px">Consejo: foto lateral o tres cuartos, en horizontal y con fondo despejado. Se guarda solo en este iPhone.</p>`});
   heroPhotos(s);
   s.querySelector('#cpIn').onchange = async e => { const f = e.target.files[0]; if (!f) return; const old = v.foto; v.foto = await putPhoto(f); if (old) await delPhoto(old); await save('vehicles', v); s.close(); render(); toast('Foto guardada'); };
+  const w1 = s.querySelector('#cpWeb'); if (w1) w1.onclick = async () => { v.fotoWebOff = true; await save('vehicles', v); s.close(); render(); };
+  const w2 = s.querySelector('#cpWebOn'); if (w2) w2.onclick = async () => { v.fotoWebOff = false; await save('vehicles', v); s.close(); render(); };
   const d = s.querySelector('#cpDel'); if (d) d.onclick = async () => { await delPhoto(v.foto); v.foto = null; await save('vehicles', v); s.close(); render(); };
 }
 function alertRow(a) {
@@ -1449,7 +1480,7 @@ views.mas = v => `<h2>Más</h2><p class="sub">Herramientas y configuración</p><
   <p class="note" style="text-align:center;margin-top:18px;letter-spacing:.2em">GESCAR · V2.0</p>`;
 
 views.vehiculos = () => `<h2>Vehículos</h2><p class="sub">Cada vehículo con su historial independiente</p>${S.vehicles.map(v => `<div class="card vcard rv" onclick="formVehicle(S.vehicles.find(x=>x.id==='${v.id}'))">
-  <div class="vimg">${v.foto ? `<div class="photo" data-bg="${v.foto}"></div>` : carSVG(v, {suf: 'v'})}</div>
+  <div class="vimg">${photoLayer(v)}${carSVG(v, {suf: 'v'})}</div>
   <div class="vb"><div class="row"><div class="grow"><div class="eyebrow" style="color:var(--gold)">${esc(v.marca || '')}</div><div style="font-weight:300;font-size:20px">${esc(v.modelo || v.alias)}</div></div>${v.id === curV()?.id ? '<span class="pill info">Activo</span>' : ''}</div>
   <div class="kv" style="margin-top:10px"><span>Matrícula</span><span>${esc(v.matricula || '—')}</span><span>Motor</span><span>${esc(v.motor || '—')}</span><span>Km actual</span><span>${fKm(curKm(v))}</span><span>ITV</span><span>${fDate(v.itv)}</span><span>Registros</span><span>${of('services', v).length} intervenciones · ${of('faults', v).length} averías</span></div></div></div>`).join('') || '<div class="card empty">Sin vehículos</div>'}
   <button class="btn block" onclick="formVehicle()">${ico('plus', 2)} Añadir vehículo</button>`;
