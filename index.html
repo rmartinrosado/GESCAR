@@ -1610,9 +1610,11 @@ async function gemini(parts, onTry) {
 function vFills(F) {
   const v = S.vehicles.find(x => x.id === F.vid); if (!v) return []; const d = F.datosV || {}; const out = [];
   if (d.bastidor && !v.vin) out.push({k: 'vin', l: 'Bastidor', v: d.bastidor});
+  if (d.motor && !String(v.motor || '').toUpperCase().includes(String(d.motor).split(' ')[0].toUpperCase())) out.push({k: 'motor', l: 'Motor', v: d.motor});
   if ((d.matricula || F.matricula) && !v.matricula) out.push({k: 'matricula', l: 'Matrícula', v: d.matricula || F.matricula});
-  if (d.aceite_especificacion && !/^p\.ej/i.test(d.aceite_especificacion) && !v.aceite) out.push({k: 'aceite', l: 'Aceite motor', v: d.aceite_especificacion + (d.capacidad_aceite_l ? ' · ' + d.capacidad_aceite_l + ' L' : '')});
-  if (d.neumaticos_medida && !/^p\.ej/i.test(d.neumaticos_medida) && !v.neumaticos) out.push({k: 'neumaticos', l: 'Medida neumáticos', v: d.neumaticos_medida});
+  const newer = k => !v[k] || String(v[k]).includes('…') || ((v._fd || {})[k] && F.fecha >= v._fd[k]);
+  if (d.aceite_especificacion && !/^p\.ej/i.test(d.aceite_especificacion) && newer('aceite')) { const val = d.aceite_especificacion + (d.capacidad_aceite_l ? ' · ' + d.capacidad_aceite_l + ' L' : ''); if (val !== v.aceite) out.push({k: 'aceite', l: 'Aceite motor', v: val}); }
+  if (d.neumaticos_medida && !/^p\.ej/i.test(d.neumaticos_medida) && newer('neumaticos') && d.neumaticos_medida !== v.neumaticos && !(String(d.neumaticos_medida).includes('…') && v.neumaticos && !String(v.neumaticos).includes('…'))) out.push({k: 'neumaticos', l: 'Medida neumáticos', v: d.neumaticos_medida});
   if (d.itv_proxima && /^\d{4}-\d\d-\d\d$/.test(d.itv_proxima) && (!v.itv || d.itv_proxima > v.itv)) out.push({k: 'itv', l: 'Próxima ITV', v: d.itv_proxima});
   return out;
 }
@@ -1640,7 +1642,7 @@ function normFactura(f) {
     let pid = l.plan_id && S.plan.some(p => p.id === l.plan_id && p.vehicleId === vid) ? l.plan_id : null;
     if (!pid && l.operacion_plan) { const on = String(l.operacion_plan).toLowerCase(); pid = S.plan.find(p => p.vehicleId === vid && (p.nombre.toLowerCase() === on || p.nombre.toLowerCase().includes(on) || on.includes(p.nombre.toLowerCase())))?.id
       || ((f.nuevas_operaciones || []).some(o => String(o.nombre || '').toLowerCase() === on) ? null : matchPlan(l.operacion_plan, vid)); }
-    if (!pid && Array.isArray(l.componentes)) l.componente_ids = S.components.filter(c => c.vehicleId === vid && l.componentes.some(n => c.nombre.toLowerCase() === String(n).toLowerCase())).map(c => c.id);
+    if (Array.isArray(l.componentes) && l.componentes.length) l.componente_ids = S.components.filter(c => c.vehicleId === vid && l.componentes.some(n => c.nombre.toLowerCase() === String(n).toLowerCase())).map(c => c.id);
     const explicitNull = Object.prototype.hasOwnProperty.call(l, 'operacion_plan') && l.operacion_plan == null && !l.plan_id;
     const toNueva = l.operacion_plan && (f.nuevas_operaciones || []).some(o => String(o.nombre || '').toLowerCase() === String(l.operacion_plan).toLowerCase());
     if (!pid && !explicitNull && !toNueva && !['mano_obra', 'tasa', 'descuento'].includes(l.tipo)) {
@@ -1750,7 +1752,7 @@ async function saveFactura(F, docs) {
     if (!o.intervalo_km && !o.intervalo_meses) o.intervalo_meses = 12;
     await save('plan', {id: uid(), vehicleId: F.vid, nombre: o.nombre, sistema: o.sistema || 'Otros', intKm: num(o.intervalo_km), intMeses: num(o.intervalo_meses), notas: (o.motivo || '') + ' · Añadida desde factura ' + (F.numero || ''), activo: true, baseFecha: F.fecha, baseKm: F.km});
   }
-  F.lineas.forEach(l => { if (!l.plan_id && l.operacion_plan) { const p = byName(l.operacion_plan); if (p) l.plan_id = p.id; } });
+  F.lineas.forEach(l => { if (l.operacion_plan) { const p = byName(l.operacion_plan); if (p) l.plan_id = p.id; } });   // el nombre exacto manda
   const tot = F.total ?? null; const base = F.base ?? F.lineas.reduce((a, l) => a + (l.importe || 0), 0);
   const ivaImp = F.iva ?? (tot != null ? Math.round((tot - base) * 100) / 100 : 0);
   const mo = F.lineas.filter(l => l.tipo === 'mano_obra').reduce((a, l) => a + (l.importe || 0), 0);
@@ -1770,7 +1772,7 @@ async function saveFactura(F, docs) {
   if (F.tipo === 'correctivo' && F.averia) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: F.averia, gravedad: 'media', estado: 'resuelta', diagnostico: '', solucion: F.titulo, serviceId: rec.id, fotos: []});
   // Ajustes adicionales
   const v = S.vehicles.find(x => x.id === F.vid);
-  let vch = false; for (const x of vFills(F)) if (F.vOn[x.k] !== false) { v[x.k] = x.v; vch = true; }
+  let vch = false; for (const x of vFills(F)) if (F.vOn[x.k] !== false) { v[x.k] = x.v; v._fd = {...(v._fd || {}), [x.k]: F.fecha}; vch = true; }
   if (vch) await save('vehicles', v);
   for (const r of F.recs.filter(r => r.on)) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: 'Recomendación del taller: ' + r.texto, sistema: r.sistema || 'Otros', gravedad: r.urgencia === 'alta' ? 'grave' : r.urgencia === 'baja' ? 'leve' : 'media', estado: r.estado === 'resuelta' ? 'resuelta' : 'diagnostico', sintomas: `Detectado por ${F.taller || 'el taller'} en la factura ${F.numero || ''}`, solucion: r.solucion || '', fotos: []});
   for (const m of F.meds || []) { const c = S.components.find(x => x.id === m.compId); if (!c) continue; c.lecturas = [...(c.lecturas || []).filter(l => !(l.fecha === F.fecha && l.km === F.km)), {fecha: F.fecha, km: F.km, valor: m.valor}].sort((a, b) => (a.km || 0) - (b.km || 0)); await save('components', c); }
