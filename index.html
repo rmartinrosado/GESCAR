@@ -757,7 +757,7 @@ function formService(s, preset = {}) {
       for (const id of old) if (!now.has(id)) await delPhoto(id);
       const rec = {...s, ...o, fotos: P, id: s.id || uid()};
       await save('services', rec);
-      for (const l of rec.lineas) if (l.compId) { const c = S.components.find(x => x.id === l.compId); if (c && (!c.fechaMontaje || rec.fecha >= c.fechaMontaje)) { c.fechaMontaje = rec.fecha; c.kmMontaje = rec.km; c.lecturas = []; if (l.ref) c.ref = l.ref; await save('components', c); } }
+      for (const l of rec.lineas) if (l.compId) { const c = S.components.find(x => x.id === l.compId); if (c && (!c.fechaMontaje || rec.fecha >= c.fechaMontaje)) { c.fechaMontaje = rec.fecha; c.kmMontaje = rec.km; c.lecturas = (c.lecturas || []).filter(l => (l.km || 0) >= (rec.km || 0)); if (l.ref) c.ref = l.ref; await save('components', c); } }
       if (rec.faultId) { const ft = S.faults.find(x => x.id === rec.faultId); if (ft && ft.estado !== 'resuelta') { ft.estado = 'resuelta'; ft.serviceId = rec.id; await save('faults', ft); } }
       toast('Intervención guardada');
     },
@@ -1767,7 +1767,7 @@ async function saveFactura(F, docs) {
   // Componentes sustituidos: se reinicia su desgaste
   for (const id of new Set(F.lineas.flatMap(l => l.componente_ids || []))) {
     const c = S.components.find(x => x.id === id); if (!c) continue;
-    if (!c.fechaMontaje || F.fecha >= c.fechaMontaje) { const l = F.lineas.find(x => (x.componente_ids || []).includes(id)); c.fechaMontaje = F.fecha; c.kmMontaje = F.km; c.lecturas = []; if (l?.referencia || l?.descripcion) c.ref = [l.descripcion, l.referencia].filter(Boolean).join(' · ').slice(0, 120); await save('components', c); }
+    if (!c.fechaMontaje || F.fecha >= c.fechaMontaje) { const l = F.lineas.find(x => (x.componente_ids || []).includes(id)); c.fechaMontaje = F.fecha; c.kmMontaje = F.km; c.lecturas = (c.lecturas || []).filter(x => (x.km || 0) >= (F.km || 0)); if (l?.referencia || l?.descripcion) c.ref = [l.descripcion, l.referencia].filter(Boolean).join(' · ').slice(0, 120); await save('components', c); }
   }
   // Avería reparada
   if (F.tipo === 'correctivo' && F.averia) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: F.averia, gravedad: 'media', estado: 'resuelta', diagnostico: '', solucion: F.titulo, serviceId: rec.id, fotos: []});
