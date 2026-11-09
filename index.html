@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GESCAR · Mantenimiento de vehículos</title>
+<meta name="theme-color" content="#0e2a47">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GESCAR">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<style>
+:root{
+  --bg:#f3f5f8;--card:#fff;--ink:#14202e;--muted:#5d6b7a;--line:#dfe4ea;
+  --brand:#0e2a47;--accent:#ffb020;--ok:#1f9d55;--warn:#d98a00;--bad:#d64040;--info:#2b6cb0;
+  --v1:#2b6cb0;--v2:#b0412b;--radius:14px;
+  --safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root{--bg:#0b1420;--card:#152232;--ink:#e8eef5;--muted:#93a3b5;--line:#25374b;--brand:#0a1f36}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+header.top{position:sticky;top:0;z-index:20;background:var(--brand);color:#fff;padding:calc(var(--safe-t) + 10px) 14px 10px}
+.top-row{display:flex;align-items:center;gap:10px}
+.logo{font-weight:800;letter-spacing:.5px;font-size:18px}
+.logo b{color:var(--accent)}
+.vsel{flex:1;display:flex;justify-content:flex-end}
+.vbtn{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);border:0;border-radius:999px;padding:7px 12px;color:#fff;max-width:100%}
+.vbtn .dot{width:10px;height:10px;border-radius:50%;flex:none}
+.vbtn span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:14px}
+.kmbar{display:flex;align-items:center;justify-content:space-between;margin-top:8px;font-size:13px;opacity:.95}
+.kmbar strong{font-size:20px;letter-spacing:.3px}
+.kmbar button{background:var(--accent);color:#1b1200;border:0;border-radius:10px;padding:7px 12px;font-weight:700}
+main{padding:12px 12px calc(84px + var(--safe-b))}
+nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:20;background:var(--card);border-top:1px solid var(--line);display:flex;padding-bottom:var(--safe-b)}
+nav.tabs a{flex:1;text-align:center;padding:8px 2px 7px;color:var(--muted);text-decoration:none;font-size:11px}
+nav.tabs a .ic{display:block;font-size:21px;line-height:1.1}
+nav.tabs a.on{color:var(--info);font-weight:700}
+nav.tabs a .bdg{display:inline-block;min-width:16px;padding:0 4px;border-radius:8px;background:var(--bad);color:#fff;font-size:10px;margin-left:2px;vertical-align:top}
+h2{font-size:19px;margin:6px 2px 10px}
+h3{font-size:15px;margin:16px 2px 8px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.card{background:var(--card);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;box-shadow:0 1px 2px rgba(0,0,0,.06);border:1px solid var(--line)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px}
+.kpi .n{font-size:22px;font-weight:800}
+.kpi .l{font-size:12px;color:var(--muted)}
+.kpi.bad .n{color:var(--bad)}.kpi.warn .n{color:var(--warn)}.kpi.ok .n{color:var(--ok)}
+.row{display:flex;align-items:center;gap:10px}
+.row .grow{flex:1;min-width:0}
+.item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line);cursor:pointer}
+.item:first-child{border-top:0}
+.item .grow{flex:1;min-width:0}
+.item .t{font-weight:650}
+.item .s{font-size:13px;color:var(--muted)}
+.item .r{text-align:right;font-size:13px;white-space:nowrap}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--line);color:var(--ink);white-space:nowrap}
+.pill.ok{background:#d7f3e3;color:#11643a}.pill.warn{background:#fde9c2;color:#7a4c00}.pill.bad{background:#fbd5d5;color:#8a1f1f}.pill.info{background:#d8e7f8;color:#1d4b80}.pill.grey{background:var(--line);color:var(--muted)}
+@media (prefers-color-scheme:dark){.pill.ok{background:#11402a;color:#8ce0b0}.pill.warn{background:#4a3405;color:#ffd27a}.pill.bad{background:#4d1717;color:#ffaaaa}.pill.info{background:#15345a;color:#a9cdf5}}
+.bar{height:7px;background:var(--line);border-radius:4px;overflow:hidden;margin-top:6px}
+.bar i{display:block;height:100%;background:var(--ok)}
+.bar i.warn{background:var(--warn)}.bar i.bad{background:var(--bad)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:12px;padding:11px 14px;font-weight:650;background:var(--info);color:#fff}
+.btn.sec{background:var(--line);color:var(--ink)}
+.btn.bad{background:var(--bad)}
+.btn.block{display:flex;width:100%}
+.btn.sm{padding:7px 10px;font-size:13px;border-radius:10px}
+.fab{position:fixed;right:16px;bottom:calc(76px + var(--safe-b));z-index:15;width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:#1b1200;font-size:30px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+.menu a{display:flex;align-items:center;gap:12px;padding:13px 4px;border-top:1px solid var(--line);color:var(--ink);text-decoration:none}
+.menu a:first-child{border-top:0}
+.menu a .ic{font-size:22px;width:30px;text-align:center}
+.menu a .s{font-size:12px;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:22px 10px}
+.seg{display:flex;background:var(--line);border-radius:10px;padding:3px;margin-bottom:10px}
+.seg button{flex:1;border:0;background:transparent;padding:7px 4px;border-radius:8px;font-size:13px}
+.seg button.on{background:var(--card);font-weight:700;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.search{width:100%;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);margin-bottom:10px}
+.thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.thumbs img{width:64px;height:64px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.thumbs .ph{position:relative}
+.thumbs .ph button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;border:0;background:var(--bad);color:#fff;font-size:13px;line-height:22px;padding:0}
+.note{font-size:12px;color:var(--muted)}
+.warnbox{background:#fff4dc;color:#5a3a00;border-radius:12px;padding:10px 12px;font-size:13px;margin-bottom:10px;border:1px solid #f3d48c}
+@media (prefers-color-scheme:dark){.warnbox{background:#3a2b08;color:#ffe2a3;border-color:#6b4f12}}
+/* hoja modal */
+.sheet-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:640px;max-height:92vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;animation:up .2s ease-out}
+@keyframes up{from{transform:translateY(40px);opacity:.4}to{transform:none;opacity:1}}
+.sheet-h{display:flex;align-items:center;gap:8px;padding:14px 14px 10px;border-bottom:1px solid var(--line)}
+.sheet-h .tt{flex:1;font-weight:750;font-size:17px}
+.sheet-b{overflow:auto;padding:12px 14px calc(16px + var(--safe-b));-webkit-overflow-scrolling:touch}
+.fld{margin-bottom:11px}
+.fld label{display:block;font-size:12px;color:var(--muted);margin:0 0 4px 2px;font-weight:600}
+.fld input,.fld select,.fld textarea{width:100%;padding:10px 11px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-size:16px}
+.fld textarea{min-height:70px;resize:vertical}
+.fld .chk{display:flex;align-items:center;gap:8px;padding:6px 2px;font-size:15px}
+.fld .chk input{width:20px;height:20px}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lines .ln{display:grid;grid-template-columns:1fr 64px 80px 30px;gap:6px;margin-bottom:6px}
+.lines .ln input,.lines .ln select{padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--card);font-size:15px;width:100%}
+.lines .ln .x{border:0;background:transparent;color:var(--bad);font-size:20px}
+.lines .ln2{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:-2px}
+.chklist{max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:4px 10px;background:var(--card)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(90px + var(--safe-b));background:#1c2a39;color:#fff;padding:10px 16px;border-radius:12px;z-index:60;font-size:14px;max-width:90%;text-align:center}
+.vcard{border-left:6px solid var(--v1)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 12px;font-size:14px}
+.kv span:nth-child(odd){color:var(--muted)}
+#printArea{display:none}
+@media print{
+  body *{visibility:hidden}
+  #printArea,#printArea *{visibility:visible}
+  #printArea{display:block;position:absolute;left:0;top:0;width:100%;color:#000;background:#fff;font:11pt/1.35 -apple-system,Helvetica,Arial,sans-serif}
+  #printArea h1{font-size:18pt;margin:0 0 4px}
+  #printArea h2{font-size:13pt;margin:16px 0 6px;border-bottom:2px solid #0e2a47;padding-bottom:2px}
+  #printArea table{width:100%;border-collapse:collapse;font-size:9.5pt;margin-bottom:6px}
+  #printArea th,#printArea td{border:1px solid #bbb;padding:3px 5px;text-align:left;vertical-align:top}
+  #printArea th{background:#e9eef4}
+  #printArea .pimgs img{width:120px;height:90px;object-fit:cover;margin:2px;border:1px solid #999}
+  #printArea .avoid{page-break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-row">
+    <div class="logo">GES<b>CAR</b></div>
+    <div class="vsel"><button class="vbtn" id="vbtn" onclick="pickVehicle()"><i class="dot" id="vdot"></i><span id="vname">Sin vehículo</span> ▾</button></div>
+  </div>
+  <div class="kmbar"><div>Kilometraje actual<br><strong id="kmNow">—</strong></div><button onclick="formOdo()">＋ Km</button></div>
+</header>
+<main id="view"></main>
+<button class="fab" id="fab" onclick="quickAdd()" aria-label="Añadir">＋</button>
+<nav class="tabs" id="tabs">
+  <a href="#inicio" data-r="inicio"><span class="ic">🏠</span>Inicio</a>
+  <a href="#plan" data-r="plan"><span class="ic">🗓️</span>Plan<span id="bdgPlan"></span></a>
+  <a href="#historial" data-r="historial"><span class="ic">🔧</span>Historial</a>
+  <a href="#averias" data-r="averias"><span class="ic">⚠️</span>Averías<span id="bdgAv"></span></a>
+  <a href="#mas" data-r="mas"><span class="ic">☰</span>Más</a>
+</nav>
+<div id="printArea"></div>
+<input type="file" id="fileImport" accept="application/json,.json" hidden>
+
+<script>
+'use strict';
+/* ================= Utilidades ================= */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const num = v => { if (v === '' || v == null) return null; const n = Number(String(v).replace(/\./g, '').replace(',', '.')); return isFinite(n) ? n : null; };
+const dec = v => { if (v === '' || v == null) return null; const n = Number(String(v).replace(',', '.')); return isFinite(n) ? n : null; };
+const fKm = n => n == null ? '—' : Math.round(n).toLocaleString('es-ES') + ' km';
+const fEur = n => (n || 0).toLocaleString('es-ES', {style: 'currency', currency: 'EUR'});
+const fDate = s => { if (!s) return '—'; const [y, m, d] = s.split('-'); return `${d}/${m}/${y}`; };
+const addMonths = (iso, m) => { const d = new Date(iso + 'T12:00:00'); d.setMonth(d.getMonth() + m); return d.toISOString().slice(0, 10); };
+const addDays = (iso, n) => { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const daysBetween = (a, b) => Math.round((new Date(b + 'T12:00:00') - new Date(a + 'T12:00:00')) / 864e5);
+const STATUS = {bad: 'Vencido', warn: 'Próximo', ok: 'Al día', grey: 'Sin datos'};
+
+/* ================= Base de datos (IndexedDB) ================= */
+const STORES = ['vehicles', 'odometer', 'plan', 'services', 'faults', 'components', 'expenses', 'photos', 'meta'];
+const DB = {
+  db: null, mem: false,
+  open() {
+    return new Promise(res => {
+      try {
+        const rq = indexedDB.open('gescar', 1);
+        rq.onupgradeneeded = () => STORES.forEach(s => { if (!rq.result.objectStoreNames.contains(s)) rq.result.createObjectStore(s, {keyPath: 'id'}); });
+        rq.onsuccess = () => { this.db = rq.result; res(true); };
+        rq.onerror = () => { this.mem = true; res(false); };
+      } catch (e) { this.mem = true; res(false); }
+    });
+  },
+  tx(store, mode, fn) {
+    if (this.mem) return Promise.resolve(null);
+    return new Promise((res, rej) => {
+      try {
+        const t = this.db.transaction(store, mode); const st = t.objectStore(store); const r = fn(st);
+        t.oncomplete = () => res(r && r.result); t.onerror = () => rej(t.error);
+      } catch (e) { rej(e); }
+    });
+  },
+  all(s) { return this.tx(s, 'readonly', st => st.getAll()).then(r => r || []); },
+  get(s, id) { return this.tx(s, 'readonly', st => st.get(id)); },
+  put(s, o) { return this.tx(s, 'readwrite', st => st.put(o)); },
+  del(s, id) { return this.tx(s, 'readwrite', st => st.delete(id)); },
+  clear(s) { return this.tx(s, 'readwrite', st => st.clear()); }
+};
+const S = {vehicles: [], odometer: [], plan: [], services: [], faults: [], components: [], expenses: [], meta: {}};
+const memPhotos = {};
+async function load() {
+  for (const s of STORES) { if (s === 'photos') continue; const rows = await DB.all(s); if (s === 'meta') { S.meta = {}; rows.forEach(r => S.meta[r.id] = r.v); } else S[s] = rows; }
+}
+async function save(store, obj) { const arr = S[store]; const i = arr.findIndex(x => x.id === obj.id); if (i >= 0) arr[i] = obj; else arr.push(obj); await DB.put(store, obj); }
+async function remove(store, id) { S[store] = S[store].filter(x => x.id !== id); await DB.del(store, id); }
+async function setMeta(k, v) { S.meta[k] = v; await DB.put('meta', {id: k, v}); }
+const cfg = k => ({avisoKm: 1000, avisoDias: 30, kmDia: 40, ...(S.meta.cfg || {})})[k];
+
+/* ================= Fotos ================= */
+const urlCache = {};
+async function putPhoto(file) {
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
+  const max = 1600, k = Math.min(1, max / Math.max(img.width, img.height));
+  const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.8));
+  const id = 'ph_' + uid();
+  if (DB.mem) memPhotos[id] = blob; else await DB.put('photos', {id, blob});
+  return id;
+}
+async function photoURL(id) {
+  if (urlCache[id]) return urlCache[id];
+  const rec = DB.mem ? {blob: memPhotos[id]} : await DB.get('photos', id);
+  if (!rec || !rec.blob) return '';
+  return urlCache[id] = URL.createObjectURL(rec.blob);
+}
+async function delPhoto(id) { if (DB.mem) delete memPhotos[id]; else await DB.del('photos', id); }
+const blobToDataURL = b => new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
+const dataURLToBlob = async d => (await fetch(d)).blob();
+async function fillThumbs(root = document) {
+  for (const img of root.querySelectorAll('img[data-ph]')) { if (!img.src) img.src = await photoURL(img.dataset.ph); }
+}
+const thumbsHTML = ids => (ids && ids.length) ? `<div class="thumbs">${ids.map(id => `<img data-ph="${id}" alt="foto" onclick="event.stopPropagation();viewPhoto('${id}')">`).join('')}</div>` : '';
+async function viewPhoto(id) {
+  const u = await photoURL(id);
+  sheet({title: 'Fotografía', body: `<img src="${u}" style="width:100%;border-radius:12px">`});
+}
+
+/* ================= Vehículo activo y cálculos ================= */
+const VCOLORS = ['#2b6cb0', '#b0412b', '#2f855a', '#805ad5', '#c05621', '#2c7a7b'];
+const curV = () => S.vehicles.find(v => v.id === S.meta.vid) || S.vehicles[0] || null;
+const of = (store, v = curV()) => v ? S[store].filter(x => x.vehicleId === v.id) : [];
+function kmPoints(v) {
+  const p = [];
+  if (v.kmInicial != null && v.fechaCompra) p.push({fecha: v.fechaCompra, km: v.kmInicial});
+  of('odometer', v).forEach(o => p.push({fecha: o.fecha, km: o.km}));
+  of('services', v).forEach(o => o.km != null && p.push({fecha: o.fecha, km: o.km}));
+  of('faults', v).forEach(o => o.km != null && p.push({fecha: o.fecha, km: o.km}));
+  return p.filter(x => x.fecha && x.km != null).sort((a, b) => a.fecha.localeCompare(b.fecha) || a.km - b.km);
+}
+function curKm(v = curV()) { if (!v) return null; const p = kmPoints(v); let m = v.kmInicial ?? null; p.forEach(x => { if (m == null || x.km > m) m = x.km; }); return m; }
+function kmDia(v = curV()) {
+  const p = kmPoints(v); if (p.length >= 2) {
+    // últimos ~12 meses si es posible
+    const last = p[p.length - 1]; let first = p[0];
+    for (const x of p) { if (daysBetween(x.fecha, last.fecha) <= 400) { first = x; break; } }
+    const d = daysBetween(first.fecha, last.fecha);
+    if (d >= 20 && last.km > first.km) return (last.km - first.km) / d;
+  }
+  return v?.kmDia || cfg('kmDia');
+}
+function lastDone(item) {
+  const svc = S.services.filter(s => s.vehicleId === item.vehicleId && (s.planIds || []).includes(item.id)).sort((a, b) => b.fecha.localeCompare(a.fecha) || (b.km || 0) - (a.km || 0))[0];
+  if (svc) return {fecha: svc.fecha, km: svc.km, svcId: svc.id};
+  if (item.baseFecha || item.baseKm != null) return {fecha: item.baseFecha || null, km: item.baseKm ?? null, base: true};
+  return null;
+}
+function planStatus(item) {
+  const v = S.vehicles.find(x => x.id === item.vehicleId); const km = curKm(v); const kd = kmDia(v); const hoy = todayISO();
+  const ld = lastDone(item);
+  const r = {ld, nextKm: null, nextFecha: null, restKm: null, restDias: null, estFecha: null, status: 'grey', pct: 0};
+  if (!ld) return r;
+  if (item.intKm && ld.km != null) { r.nextKm = ld.km + item.intKm; if (km != null) { r.restKm = r.nextKm - km; r.pct = Math.max(r.pct, (km - ld.km) / item.intKm); } }
+  if (item.intMeses && ld.fecha) { r.nextFecha = addMonths(ld.fecha, item.intMeses); r.restDias = daysBetween(hoy, r.nextFecha); r.pct = Math.max(r.pct, daysBetween(ld.fecha, hoy) / (item.intMeses * 30.44)); }
+  let est = r.nextFecha;
+  if (r.restKm != null) { const f = addDays(hoy, Math.round(r.restKm / kd)); if (!est || f < est) est = f; }
+  r.estFecha = est;
+  if (r.nextKm == null && r.nextFecha == null) return r;
+  const dEst = est ? daysBetween(hoy, est) : null;
+  if ((r.restKm != null && r.restKm <= 0) || (r.restDias != null && r.restDias <= 0)) r.status = 'bad';
+  else if ((r.restKm != null && r.restKm <= cfg('avisoKm')) || (dEst != null && dEst <= cfg('avisoDias'))) r.status = 'warn';
+  else r.status = 'ok';
+  return r;
+}
+function compStatus(c) {
+  const v = S.vehicles.find(x => x.id === c.vehicleId); const km = curKm(v); const kd = kmDia(v); const hoy = todayISO();
+  const r = {pct: 0, estKm: null, estFecha: null, status: 'grey', motivo: ''};
+  const cand = [];
+  if (c.vidaKm && c.kmMontaje != null && km != null) { r.pct = Math.max(r.pct, (km - c.kmMontaje) / c.vidaKm); cand.push({km: c.kmMontaje + c.vidaKm, m: 'vida útil km'}); }
+  if (c.vidaMeses && c.fechaMontaje) { r.pct = Math.max(r.pct, daysBetween(c.fechaMontaje, hoy) / (c.vidaMeses * 30.44)); cand.push({fecha: addMonths(c.fechaMontaje, c.vidaMeses), m: 'antigüedad'}); }
+  // Predictivo por mediciones (regresión lineal valor ~ km)
+  const m = c.medida;
+  if (m && m.limite != null) {
+    const pts = (c.lecturas || []).filter(l => l.km != null && l.valor != null).map(l => [l.km, l.valor]);
+    if (m.nuevo != null && c.kmMontaje != null) pts.unshift([c.kmMontaje, m.nuevo]);
+    if (pts.length) {
+      const lastV = pts.sort((a, b) => a[0] - b[0])[pts.length - 1][1];
+      if (m.nuevo != null && m.nuevo !== m.limite) r.pct = Math.max(r.pct, (m.nuevo - lastV) / (m.nuevo - m.limite));
+    }
+    if (pts.length >= 2) {
+      const n = pts.length, sx = pts.reduce((a, p) => a + p[0], 0), sy = pts.reduce((a, p) => a + p[1], 0);
+      const sxx = pts.reduce((a, p) => a + p[0] * p[0], 0), sxy = pts.reduce((a, p) => a + p[0] * p[1], 0);
+      const den = n * sxx - sx * sx;
+      if (den) { const b = (n * sxy - sx * sy) / den, a = (sy - b * sx) / n; if (b < 0) { cand.push({km: (m.limite - a) / b, m: 'tendencia de medidas'}); } }
+    }
+  }
+  let best = null;
+  for (const x of cand) {
+    const f = x.fecha || (km != null ? addDays(hoy, Math.round((x.km - km) / kd)) : null);
+    if (f && (!best || f < best.f)) best = {f, km: x.km ?? (km != null ? km + daysBetween(hoy, x.fecha) * kd : null), m: x.m};
+  }
+  if (best) { r.estFecha = best.f; r.estKm = best.km; r.motivo = best.m; }
+  const d = r.estFecha ? daysBetween(hoy, r.estFecha) : null;
+  if (r.pct >= 1 || (d != null && d <= 0)) r.status = 'bad';
+  else if (r.pct >= 0.85 || (d != null && d <= Math.max(cfg('avisoDias'), 60))) r.status = 'warn';
+  else if (cand.length || r.pct > 0) r.status = 'ok';
+  return r;
+}
+const svcCost = s => (s.lineas || []).reduce((a, l) => a + (l.cant || 1) * (l.precio || 0), 0) + (s.manoObra || 0);
+function allCosts(v = curV()) {
+  const rows = of('services', v).map(s => ({fecha: s.fecha, km: s.km, cat: s.tipo === 'correctivo' ? 'Reparaciones' : s.tipo === 'predictivo' ? 'Predictivo / diagnosis' : 'Mantenimiento', concepto: s.titulo, importe: svcCost(s), ref: s.id}));
+  of('expenses', v).forEach(e => rows.push({fecha: e.fecha, km: e.km, cat: e.categoria, concepto: e.concepto, importe: e.importe || 0, ref: e.id, exp: true}));
+  return rows.sort((a, b) => b.fecha.localeCompare(a.fecha));
+}
+function alerts(v = curV()) {
+  if (!v) return [];
+  const a = [];
+  of('plan', v).filter(p => p.activo !== false).forEach(p => { const st = planStatus(p); if (st.status === 'bad' || st.status === 'warn') a.push({kind: 'plan', item: p, st, status: st.status}); });
+  of('components', v).filter(c => c.activo !== false).forEach(c => { const st = compStatus(c); if (st.status === 'bad' || st.status === 'warn') a.push({kind: 'comp', item: c, st, status: st.status}); });
+  if (v.itv) { const d = daysBetween(todayISO(), v.itv); if (d <= cfg('avisoDias')) a.push({kind: 'itv', status: d <= 0 ? 'bad' : 'warn', dias: d}); }
+  if (v.seguro) { const d = daysBetween(todayISO(), v.seguro); if (d <= cfg('avisoDias')) a.push({kind: 'seguro', status: d <= 0 ? 'bad' : 'warn', dias: d}); }
+  return a.sort((x, y) => (x.status === 'bad' ? 0 : 1) - (y.status === 'bad' ? 0 : 1));
+}
+
+/* ================= UI básica ================= */
+function toast(t) { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.appendChild(d); setTimeout(() => d.remove(), 2600); }
+function sheet({title, body, actions = ''}) {
+  const bg = document.createElement('div'); bg.className = 'sheet-bg';
+  bg.innerHTML = `<div class="sheet"><div class="sheet-h"><div class="tt">${esc(title)}</div>${actions}<button class="btn sec sm" data-close>✕</button></div><div class="sheet-b">${body}</div></div>`;
+  bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('[data-close]')) close(); });
+  const close = () => { bg.remove(); };
+  bg.close = close; document.body.appendChild(bg); fillThumbs(bg); return bg;
+}
+function ask(msg, okTxt = 'Aceptar', danger = false) {
+  return new Promise(res => {
+    const s = sheet({title: 'Confirmar', body: `<p style="margin:4px 2px 16px">${esc(msg)}</p><div class="grid2"><button class="btn sec" data-r="0">Cancelar</button><button class="btn ${danger ? 'bad' : ''}" data-r="1">${esc(okTxt)}</button></div>`});
+    s.querySelectorAll('[data-r]').forEach(b => b.onclick = () => { s.close(); res(b.dataset.r === '1'); });
+    s.querySelector('[data-close]').addEventListener('click', () => res(false));
+  });
+}
+/* Formulario genérico */
+function fieldHTML(f, val) {
+  const id = 'f_' + f.k; const v = val ?? f.def ?? '';
+  if (f.type === 'row') return `<div class="f2">${f.fields.map(x => fieldHTML(x, f.vals?.[x.k])).join('')}</div>`;
+  if (f.type === 'html') return f.html;
+  let inp;
+  if (f.type === 'select') inp = `<select id="${id}">${f.opts.map(o => { const [ov, ol] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(ov)}" ${String(ov) === String(v) ? 'selected' : ''}>${esc(ol)}</option>`; }).join('')}</select>`;
+  else if (f.type === 'textarea') inp = `<textarea id="${id}" placeholder="${esc(f.ph || '')}">${esc(v)}</textarea>`;
+  else if (f.type === 'check') return `<div class="fld"><label class="chk"><input type="checkbox" id="${id}" ${v ? 'checked' : ''}> ${esc(f.l)}</label></div>`;
+  else inp = `<input id="${id}" type="${f.type === 'num' ? 'text' : (f.type || 'text')}" ${f.type === 'num' ? 'inputmode="decimal"' : ''} value="${esc(v)}" placeholder="${esc(f.ph || '')}">`;
+  return `<div class="fld"><label for="${id}">${esc(f.l)}</label>${inp}</div>`;
+}
+function readField(root, f) {
+  const el = root.querySelector('#f_' + f.k); if (!el) return undefined;
+  if (f.type === 'check') return el.checked;
+  if (f.type === 'num') return f.int ? num(el.value) : dec(el.value);
+  return el.value.trim();
+}
+function form({title, fields, vals = {}, onSave, onDelete, extra = '', after}) {
+  const flat = []; fields.forEach(f => f.type === 'row' ? f.fields.forEach(x => flat.push(x)) : flat.push(f));
+  fields.forEach(f => { if (f.type === 'row') f.vals = vals; });
+  const body = fields.map(f => f.type === 'row' ? fieldHTML(f) : fieldHTML(f, vals[f.k])).join('') + extra +
+    `<button class="btn block" id="fSave" style="margin-top:8px">Guardar</button>` + (onDelete ? `<button class="btn bad block" id="fDel" style="margin-top:10px">Eliminar</button>` : '');
+  const s = sheet({title, body});
+  s.querySelector('#fSave').onclick = async () => {
+    const out = {}; flat.forEach(f => { if (f.k) out[f.k] = readField(s, f); });
+    for (const f of flat) if (f.req && (out[f.k] === '' || out[f.k] == null)) { toast('Falta: ' + f.l); return; }
+    const ok = await onSave(out, s); if (ok !== false) { s.close(); render(); }
+  };
+  if (onDelete) s.querySelector('#fDel').onclick = async () => { if (await ask('¿Eliminar este registro? No se puede deshacer.', 'Eliminar', true)) { await onDelete(); s.close(); render(); } };
+  if (after) after(s);
+  return s;
+}
+/* Editor de fotos dentro de un formulario */
+function photoEditor(s, ids) {
+  const box = s.querySelector('#phBox'); const list = [...(ids || [])];
+  const draw = () => {
+    box.innerHTML = `<div class="thumbs">${list.map((id, i) => `<div class="ph"><img data-ph="${id}"><button data-i="${i}">✕</button></div>`).join('')}</div>
+      <label class="btn sec sm" style="margin-top:8px">📷 Añadir fotos<input type="file" accept="image/*" multiple hidden></label>`;
+    fillThumbs(box);
+    box.querySelectorAll('button[data-i]').forEach(b => b.onclick = () => { list.splice(+b.dataset.i, 1); draw(); });
+    box.querySelector('input').onchange = async e => { for (const f of e.target.files) { try { list.push(await putPhoto(f)); } catch (er) { toast('No se pudo leer la imagen'); } } draw(); };
+  };
+  draw(); return list;
+}
+const photoField = `<div class="fld"><label>Fotografías</label><div id="phBox"></div></div>`;
+
+/* ================= Planes base por vehículo ================= */
+// Intervalos orientativos y conservadores: revísalos con el manual / libro de mantenimiento de cada coche.
+const PLANES = {
+  om612: [
+    ['Aceite motor y filtro de aceite', 15000, 12, 'Motor', 'MB 229.3/229.5 · 5W-40 · aprox. 7,5 L con filtro'],
+    ['Filtro de aire', 30000, 24, 'Motor', ''],
+    ['Filtro de combustible (gasoil)', 60000, 48, 'Motor', 'Purgar y comprobar estanqueidad de retornos'],
+    ['Filtro de habitáculo (polen/carbón)', 20000, 12, 'Climatización', ''],
+    ['Líquido de frenos DOT 4', null, 24, 'Frenos', ''],
+    ['Revisión pastillas y discos de freno', 20000, 12, 'Frenos', ''],
+    ['Anticongelante / refrigerante', 100000, 60, 'Refrigeración', 'MB 325.0'],
+    ['Aceite y filtro caja automática 722.6 (si es automático)', 60000, 60, 'Transmisión', 'ATF MB 236.14; omitir si es manual'],
+    ['Correa de accesorios, tensor y poleas', 90000, 72, 'Motor', ''],
+    ['Cadena de distribución: control de estiramiento y tensor', 150000, null, 'Motor', 'OM612 lleva cadena: revisar ruido en frío y desfase'],
+    ['Revisión inyectores: fugas de retorno y arandelas de cobre', 60000, 24, 'Motor', 'Punto débil conocido del CDI de esta época'],
+    ['Revisión manguitos intercooler y EGR', 40000, 24, 'Motor', ''],
+    ['Neumáticos: presión, desgaste y rotación', 10000, 6, 'Neumáticos', ''],
+    ['Batería y sistema de carga', null, 12, 'Electricidad', ''],
+    ['Escobillas limpiaparabrisas', null, 12, 'Carrocería', ''],
+    ['Revisión bajos y corrosión (W209)', null, 12, 'Carrocería', 'Pasos de rueda, bajos de puertas y tapa maletero'],
+  ],
+  dv6: [
+    ['Aceite motor y filtro de aceite', 15000, 12, 'Motor', 'PSA B71 2290 · 5W-30 · aprox. 3,75 L con filtro'],
+    ['Filtro de aire', 30000, 24, 'Motor', ''],
+    ['Filtro de gasoil (y purga de agua)', 30000, 24, 'Motor', ''],
+    ['Filtro de habitáculo', 15000, 12, 'Climatización', ''],
+    ['Kit distribución + bomba de agua', 120000, 72, 'Motor', 'Intervalo conservador para DV6 (correa)'],
+    ['Correa de accesorios y tensor', 120000, 72, 'Motor', 'Cambiar junto con la distribución'],
+    ['Líquido de frenos DOT 4', null, 24, 'Frenos', ''],
+    ['Revisión pastillas y discos de freno', 20000, 12, 'Frenos', ''],
+    ['Refrigerante', 120000, 48, 'Refrigeración', ''],
+    ['Arandelas de inyectores (fugas de compresión)', 60000, 24, 'Motor', 'Punto débil conocido del 1.6 HDi'],
+    ['Filtro rejilla del tubo de engrase del turbo', 60000, null, 'Motor', 'Cambiar si se sustituye el turbo; revisar con cada cambio de aceite si hay carbonilla'],
+    ['FAP / aditivo Eolys (solo versión 110 CV con FAP)', 120000, null, 'Escape', 'Desactivar si tu versión no lleva FAP'],
+    ['Neumáticos: presión, desgaste y rotación', 10000, 6, 'Neumáticos', ''],
+    ['Batería y sistema de carga', null, 12, 'Electricidad', ''],
+    ['Escobillas limpiaparabrisas', null, 12, 'Carrocería', ''],
+    ['Rótulas, bieletas y silentblocks del tren delantero', 30000, 12, 'Suspensión', ''],
+  ],
+  general: [
+    ['Aceite motor y filtro de aceite', 15000, 12, 'Motor', ''], ['Filtro de aire', 30000, 24, 'Motor', ''],
+    ['Filtro de combustible', 60000, 48, 'Motor', ''], ['Filtro de habitáculo', 15000, 12, 'Climatización', ''],
+    ['Líquido de frenos', null, 24, 'Frenos', ''], ['Revisión frenos', 20000, 12, 'Frenos', ''],
+    ['Refrigerante', 100000, 60, 'Refrigeración', ''], ['Distribución', 120000, 72, 'Motor', ''],
+    ['Neumáticos: presión, desgaste y rotación', 10000, 6, 'Neumáticos', ''], ['Batería', null, 12, 'Electricidad', ''],
+  ]
+};
+const COMP_BASE = [
+  ['Neumático delantero izquierdo', 'Ruedas', 40000, 72, {unidad: 'mm', nuevo: 8, limite: 2}],
+  ['Neumático delantero derecho', 'Ruedas', 40000, 72, {unidad: 'mm', nuevo: 8, limite: 2}],
+  ['Neumático trasero izquierdo', 'Ruedas', 50000, 72, {unidad: 'mm', nuevo: 8, limite: 2}],
+  ['Neumático trasero derecho', 'Ruedas', 50000, 72, {unidad: 'mm', nuevo: 8, limite: 2}],
+  ['Pastillas de freno delanteras', 'Frenos', 40000, null, {unidad: 'mm', nuevo: 12, limite: 3}],
+  ['Pastillas de freno traseras', 'Frenos', 60000, null, {unidad: 'mm', nuevo: 11, limite: 3}],
+  ['Batería', 'Electricidad', null, 60, null],
+];
+async function loadPlan(v, key) {
+  for (const [n, km, m, sis, nota] of PLANES[key] || PLANES.general) await save('plan', {id: uid(), vehicleId: v.id, nombre: n, intKm: km, intMeses: m, sistema: sis, notas: nota, activo: true});
+}
+async function loadComps(v) {
+  for (const [n, sis, km, m, med] of COMP_BASE) await save('components', {id: uid(), vehicleId: v.id, nombre: n, sistema: sis, vidaKm: km, vidaMeses: m, medida: med, lecturas: [], activo: true});
+}
+async function seed() {
+  if (S.meta.seeded) return;
+  const a = {id: uid(), alias: 'Mercedes CLK 270 CDI', marca: 'Mercedes-Benz', modelo: 'CLK 270 CDI (W209)', motor: 'OM612 · 2.7 CDI 5 cil.', combustible: 'Diésel', anio: '', matricula: '', vin: '', kmInicial: null, fechaCompra: '', color: VCOLORS[0], planKey: 'om612'};
+  const b = {id: uid(), alias: 'Citroën Xsara Picasso', marca: 'Citroën', modelo: 'Xsara Picasso 1.6 HDi', motor: '1.6 HDi (DV6)', combustible: 'Diésel', anio: '2005', matricula: '', vin: '', kmInicial: null, fechaCompra: '', color: VCOLORS[1], planKey: 'dv6'};
+  for (const v of [a, b]) { await save('vehicles', v); await loadPlan(v, v.planKey); await loadComps(v); }
+  await setMeta('vid', a.id); await setMeta('seeded', true);
+}
+
+/* ================= Router y vistas ================= */
+const views = {};
+function route() { return (location.hash || '#inicio').slice(1) || 'inicio'; }
+function render() {
+  const v = curV(); const r = route();
+  $('#vname').textContent = v ? (v.alias || v.modelo) + (v.matricula ? ' · ' + v.matricula : '') : 'Sin vehículo';
+  $('#vdot').style.background = v ? v.color : '#888';
+  document.documentElement.style.setProperty('--v1', v ? v.color : '#2b6cb0');
+  $('#kmNow').textContent = v ? fKm(curKm(v)) : '—';
+  document.querySelectorAll('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.r === r || (r !== 'inicio' && !['plan', 'historial', 'averias'].includes(r) && a.dataset.r === 'mas')));
+  const al = alerts(v); const nPlan = al.filter(x => x.kind === 'plan' && x.status === 'bad').length;
+  const nAv = of('faults', v).filter(f => f.estado !== 'resuelta').length;
+  $('#bdgPlan').innerHTML = nPlan ? `<span class="bdg">${nPlan}</span>` : '';
+  $('#bdgAv').innerHTML = nAv ? `<span class="bdg">${nAv}</span>` : '';
+  $('#fab').style.display = ['inicio', 'historial', 'averias', 'plan', 'gastos', 'componentes', 'km'].includes(r) && v ? '' : 'none';
+  const fn = views[r] || views.inicio;
+  $('#view').innerHTML = v || r === 'vehiculos' || r === 'copias' || r === 'ajustes' ? fn(v) : `<div class="card empty">No hay vehículos.<br><br><button class="btn" onclick="formVehicle()">Añadir vehículo</button></div>`;
+  fillThumbs($('#view'));
+  updateBadge(al);
+}
+window.addEventListener('hashchange', () => { render(); window.scrollTo(0, 0); });
+
+function pickVehicle() {
+  const body = S.vehicles.map(v => `<div class="item" data-id="${v.id}"><i class="dot" style="width:14px;height:14px;border-radius:50%;background:${v.color};margin-top:3px"></i><div class="grow"><div class="t">${esc(v.alias || v.modelo)}</div><div class="s">${esc([v.matricula, v.motor].filter(Boolean).join(' · '))}</div></div><div class="r">${fKm(curKm(v))}${v.id === curV()?.id ? '<br><span class="pill info">activo</span>' : ''}</div></div>`).join('') +
+    `<button class="btn sec block" style="margin-top:12px" id="pvNew">＋ Nuevo vehículo</button>`;
+  const s = sheet({title: 'Elegir vehículo', body});
+  s.querySelectorAll('.item').forEach(el => el.onclick = async () => { await setMeta('vid', el.dataset.id); s.close(); render(); toast('Vehículo: ' + (curV().alias || curV().modelo)); });
+  s.querySelector('#pvNew').onclick = () => { s.close(); formVehicle(); };
+}
+
+/* ---------- INICIO ---------- */
+views.inicio = v => {
+  const al = alerts(v); const km = curKm(v); const kd = kmDia(v);
+  const y = new Date().getFullYear(); const gy = allCosts(v).filter(c => c.fecha.startsWith(y)).reduce((a, c) => a + c.importe, 0);
+  const abiertas = of('faults', v).filter(f => f.estado !== 'resuelta');
+  const ult = of('services', v).sort((a, b) => b.fecha.localeCompare(a.fecha)).slice(0, 3);
+  const lb = S.meta.lastBackup; const dBk = lb ? daysBetween(lb.slice(0, 10), todayISO()) : null;
+  const missing = [];
+  if (km == null) missing.push('el kilometraje actual');
+  if (!v.matricula) missing.push('la matrícula');
+  const sinBase = of('plan', v).filter(p => p.activo !== false && !lastDone(p)).length;
+  return `
+  ${missing.length ? `<div class="warnbox">Completa ${missing.join(' y ')} de este vehículo para calcular los avisos. <a href="#" onclick="formVehicle(curV());return false">Editar ficha</a></div>` : ''}
+  ${sinBase ? `<div class="warnbox">${sinBase} operaciones del plan sin fecha/km de la última vez. Indícalas en <a href="#plan">Plan</a> para que los avisos sean reales.</div>` : ''}
+  ${(dBk == null || dBk > 30) && S.services.length + S.odometer.length > 0 ? `<div class="warnbox">💾 ${dBk == null ? 'Aún no has hecho ninguna copia de seguridad.' : `Última copia hace ${dBk} días.`} <a href="#copias">Hacer copia</a></div>` : ''}
+  <div class="grid2" style="margin-bottom:10px">
+    <div class="kpi ${al.some(a => a.status === 'bad') ? 'bad' : ''}"><div class="n">${al.filter(a => a.status === 'bad').length}</div><div class="l">Vencidos</div></div>
+    <div class="kpi ${al.some(a => a.status === 'warn') ? 'warn' : ''}"><div class="n">${al.filter(a => a.status === 'warn').length}</div><div class="l">Próximos</div></div>
+    <div class="kpi ${abiertas.length ? 'bad' : 'ok'}"><div class="n">${abiertas.length}</div><div class="l">Averías abiertas</div></div>
+    <div class="kpi"><div class="n">${fEur(gy).replace(',00', '')}</div><div class="l">Gasto ${y}</div></div>
+  </div>
+  <h3>Avisos de mantenimiento</h3>
+  <div class="card">${al.length ? al.map(alertRow).join('') : '<div class="empty">✅ Todo al día</div>'}</div>
+  ${abiertas.length ? `<h3>Averías abiertas</h3><div class="card">${abiertas.map(faultRow).join('')}</div>` : ''}
+  <h3>Últimas intervenciones</h3>
+  <div class="card">${ult.length ? ult.map(svcRow).join('') : '<div class="empty">Sin intervenciones registradas</div>'}</div>
+  <p class="note" style="text-align:center">Uso medio estimado: ${Math.round(kd)} km/día · ${Math.round(kd * 365).toLocaleString('es-ES')} km/año</p>`;
+};
+function alertRow(a) {
+  if (a.kind === 'plan') {
+    const st = a.st; const parts = [];
+    if (st.restKm != null) parts.push(st.restKm <= 0 ? `pasado ${fKm(-st.restKm)}` : `faltan ${fKm(st.restKm)}`);
+    if (st.restDias != null) parts.push(st.restDias <= 0 ? `vencido hace ${-st.restDias} d` : `faltan ${st.restDias} d`);
+    return `<div class="item" onclick="formPlan(S.plan.find(p=>p.id==='${a.item.id}'))"><div class="grow"><div class="t">${esc(a.item.nombre)}</div><div class="s">${parts.join(' · ')}${st.estFecha ? ' · prevista ' + fDate(st.estFecha) : ''}</div></div><span class="pill ${a.status}">${STATUS[a.status]}</span></div>`;
+  }
+  if (a.kind === 'comp') return `<div class="item" onclick="formComp(S.components.find(c=>c.id==='${a.item.id}'))"><div class="grow"><div class="t">🔩 ${esc(a.item.nombre)}</div><div class="s">Desgaste ${Math.round(a.st.pct * 100)}%${a.st.estFecha ? ' · sustituir hacia ' + fDate(a.st.estFecha) : ''}</div></div><span class="pill ${a.status}">Predictivo</span></div>`;
+  const t = a.kind === 'itv' ? 'ITV' : 'Seguro';
+  return `<div class="item" onclick="formVehicle(curV())"><div class="grow"><div class="t">📄 ${t}</div><div class="s">${a.dias <= 0 ? 'Caducado' : 'Caduca en ' + a.dias + ' días'}</div></div><span class="pill ${a.status}">${STATUS[a.status]}</span></div>`;
+}
+function svcRow(s) {
+  const tipo = {preventivo: ['Preventivo', 'ok'], correctivo: ['Correctivo', 'bad'], predictivo: ['Predictivo', 'info']}[s.tipo] || ['—', 'grey'];
+  return `<div class="item" onclick="formService(S.services.find(x=>x.id==='${s.id}'))"><div class="grow"><div class="t">${esc(s.titulo)}</div><div class="s">${fDate(s.fecha)} · ${fKm(s.km)}${s.taller ? ' · ' + esc(s.taller) : ''}</div>${thumbsHTML((s.fotos || []).slice(0, 4))}</div><div class="r"><span class="pill ${tipo[1]}">${tipo[0]}</span><br><b>${fEur(svcCost(s))}</b></div></div>`;
+}
+function faultRow(f) {
+  const est = {abierta: ['Abierta', 'bad'], diagnostico: ['En diagnóstico', 'warn'], resuelta: ['Resuelta', 'ok']}[f.estado] || ['—', 'grey'];
+  return `<div class="item" onclick="formFault(S.faults.find(x=>x.id==='${f.id}'))"><div class="grow"><div class="t">${esc(f.titulo)}</div><div class="s">${fDate(f.fecha)} · ${fKm(f.km)}${f.codigos ? ' · ' + esc(f.codigos) : ''} · gravedad ${esc(f.gravedad || '—')}</div>${thumbsHTML((f.fotos || []).slice(0, 4))}</div><span class="pill ${est[1]}">${est[0]}</span></div>`;
+}
+
+/* ---------- PLAN PREVENTIVO ---------- */
+let planFilter = 'todos';
+views.plan = v => {
+  const items = of('plan', v).map(p => ({p, st: planStatus(p)}));
+  const ord = {bad: 0, warn: 1, grey: 2, ok: 3};
+  const list = items.filter(x => planFilter === 'todos' || (planFilter === 'pend' ? ['bad', 'warn'].includes(x.st.status) : x.p.activo === false))
+    .filter(x => planFilter === 'inact' || x.p.activo !== false)
+    .sort((a, b) => ord[a.st.status] - ord[b.st.status] || (a.st.estFecha || '9').localeCompare(b.st.estFecha || '9'));
+  return `<h2>Plan de mantenimiento preventivo</h2>
+  <div class="seg">${[['todos', 'Todos'], ['pend', 'Pendientes'], ['inact', 'Desactivados']].map(([k, l]) => `<button class="${planFilter === k ? 'on' : ''}" onclick="planFilter='${k}';render()">${l}</button>`).join('')}</div>
+  <div class="card">${list.length ? list.map(({p, st}) => {
+    const ld = st.ld; const intv = [p.intKm ? fKm(p.intKm) : '', p.intMeses ? p.intMeses + ' meses' : ''].filter(Boolean).join(' / ');
+    const pct = Math.min(1, st.pct);
+    return `<div class="item" onclick="formPlan(S.plan.find(x=>x.id==='${p.id}'))"><div class="grow"><div class="t">${esc(p.nombre)}</div>
+      <div class="s">Cada ${intv || '—'} · ${p.sistema || ''}</div>
+      <div class="s">Última: ${ld ? fDate(ld.fecha) + ' · ' + fKm(ld.km) + (ld.base ? ' (dato inicial)' : '') : '<b>sin registrar</b>'}</div>
+      ${ld ? `<div class="s">Próxima: ${[st.nextKm ? fKm(st.nextKm) : '', st.nextFecha ? fDate(st.nextFecha) : ''].filter(Boolean).join(' o ')}${st.estFecha ? ' → prevista ' + fDate(st.estFecha) : ''}</div><div class="bar"><i class="${st.status}" style="width:${Math.round(pct * 100)}%"></i></div>` : ''}
+      </div><span class="pill ${p.activo === false ? 'grey' : st.status}">${p.activo === false ? 'Inactivo' : STATUS[st.status]}</span></div>`;
+  }).join('') : '<div class="empty">Nada que mostrar</div>'}</div>
+  <div class="grid2"><button class="btn sec" onclick="formPlan()">＋ Operación</button><button class="btn sec" onclick="exportICS()">📅 Al calendario</button></div>
+  <p class="note">La fecha prevista combina el intervalo en km (según tu uso medio) y el intervalo en tiempo: manda lo primero que llegue. Los intervalos precargados son orientativos; ajústalos a tu libro de mantenimiento.</p>`;
+};
+function formPlan(p) {
+  const v = curV(); const isNew = !p; p = p || {vehicleId: v.id, activo: true};
+  const ld = p.id ? lastDone(p) : null;
+  form({
+    title: isNew ? 'Nueva operación' : 'Operación del plan',
+    vals: p,
+    fields: [
+      {k: 'nombre', l: 'Operación', req: true, ph: 'Ej. Cambio de aceite y filtro'},
+      {type: 'row', fields: [{k: 'intKm', l: 'Cada (km)', type: 'num', int: true}, {k: 'intMeses', l: 'Cada (meses)', type: 'num', int: true}]},
+      {k: 'sistema', l: 'Sistema', type: 'select', opts: ['Motor', 'Transmisión', 'Frenos', 'Suspensión', 'Dirección', 'Refrigeración', 'Climatización', 'Electricidad', 'Neumáticos', 'Escape', 'Carrocería', 'Documentación', 'Otros']},
+      {type: 'html', html: `<div class="card" style="background:var(--bg)"><b>Última vez realizada</b><div class="note" style="margin:4px 0 8px">${ld && !ld.base ? `Registrada en el historial: ${fDate(ld.fecha)} · ${fKm(ld.km)}. Los datos de abajo solo se usan si no hay intervenciones.` : 'Si no tienes la intervención en el historial, indica aquí cuándo se hizo por última vez.'}</div>`},
+      {type: 'row', fields: [{k: 'baseFecha', l: 'Fecha', type: 'date'}, {k: 'baseKm', l: 'Km', type: 'num', int: true}]},
+      {type: 'html', html: `</div>`},
+      {k: 'notas', l: 'Notas / especificación', type: 'textarea', ph: 'Tipo de aceite, referencias, capacidad…'},
+      {k: 'activo', l: 'Operación activa (genera avisos)', type: 'check', def: true},
+    ],
+    onSave: async o => { if (!o.intKm && !o.intMeses) { toast('Indica intervalo en km o en meses'); return false; } await save('plan', {...p, ...o, id: p.id || uid()}); toast('Guardado'); },
+    onDelete: isNew ? null : async () => { await remove('plan', p.id); S.services.forEach(s => { if (s.planIds) s.planIds = s.planIds.filter(i => i !== p.id); }); },
+  });
+}
+
+/* ---------- HISTORIAL (intervenciones) ---------- */
+let histFilter = 'todos', histQ = '';
+views.historial = v => {
+  const q = histQ.toLowerCase();
+  const list = of('services', v).filter(s => histFilter === 'todos' || s.tipo === histFilter)
+    .filter(s => !q || JSON.stringify([s.titulo, s.taller, s.notas, s.lineas]).toLowerCase().includes(q))
+    .sort((a, b) => b.fecha.localeCompare(a.fecha) || (b.km || 0) - (a.km || 0));
+  const tot = list.reduce((a, s) => a + svcCost(s), 0);
+  return `<h2>Historial de intervenciones</h2>
+  <input class="search" placeholder="Buscar (operación, pieza, taller…)" value="${esc(histQ)}" oninput="histQ=this.value;clearTimeout(window._hq);window._hq=setTimeout(()=>{render();const i=document.querySelector('.search');i.focus();i.setSelectionRange(i.value.length,i.value.length)},350)">
+  <div class="seg">${[['todos', 'Todas'], ['preventivo', 'Preventivo'], ['correctivo', 'Correctivo'], ['predictivo', 'Predictivo']].map(([k, l]) => `<button class="${histFilter === k ? 'on' : ''}" onclick="histFilter='${k}';render()">${l}</button>`).join('')}</div>
+  <div class="card">${list.length ? list.map(svcRow).join('') : '<div class="empty">Sin intervenciones. Pulsa ＋ para registrar la primera.</div>'}</div>
+  ${list.length ? `<p class="note" style="text-align:right">${list.length} intervenciones · ${fEur(tot)}</p>` : ''}`;
+};
+function linesEditor(s, lines) {
+  const box = s.querySelector('#lnBox'); const comps = of('components').filter(c => c.activo !== false);
+  const L = (lines || []).map(l => ({...l}));
+  const draw = () => {
+    box.innerHTML = L.map((l, i) => `<div class="ln" data-i="${i}">
+      <input data-f="nombre" placeholder="Pieza / material" value="${esc(l.nombre || '')}">
+      <input data-f="cant" inputmode="decimal" placeholder="Cant." value="${l.cant ?? 1}">
+      <input data-f="precio" inputmode="decimal" placeholder="€ ud." value="${l.precio ?? ''}">
+      <button class="x" data-x="${i}">✕</button>
+      <div class="ln2"><input data-f="ref" placeholder="Marca / referencia" value="${esc(l.ref || '')}">
+      <select data-f="compId"><option value="">— Componente controlado —</option>${comps.map(c => `<option value="${c.id}" ${c.id === l.compId ? 'selected' : ''}>${esc(c.nombre)}</option>`).join('')}</select></div></div>`).join('') +
+      `<button class="btn sec sm" id="lnAdd">＋ Pieza sustituida</button><p class="note">Si eliges un “componente controlado”, al guardar se reinicia su desgaste (montaje = fecha y km de esta intervención).</p>`;
+    box.querySelectorAll('[data-f]').forEach(el => el.oninput = el.onchange = () => { const i = +el.closest('.ln').dataset.i; const f = el.dataset.f; L[i][f] = ['cant', 'precio'].includes(f) ? dec(el.value) : el.value; });
+    box.querySelectorAll('[data-x]').forEach(b => b.onclick = () => { L.splice(+b.dataset.x, 1); draw(); });
+    box.querySelector('#lnAdd').onclick = () => { L.push({cant: 1}); draw(); };
+  };
+  draw(); return L;
+}
+function formService(s, preset = {}) {
+  const v = curV(); const isNew = !s; s = s || {vehicleId: v.id, fecha: todayISO(), km: curKm(v), tipo: 'preventivo', planIds: [], lineas: [], fotos: [], ...preset};
+  const plan = of('plan').filter(p => p.activo !== false || (s.planIds || []).includes(p.id));
+  const fault = s.faultId ? S.faults.find(f => f.id === s.faultId) : null;
+  let L, P;
+  form({
+    title: isNew ? 'Nueva intervención' : 'Intervención',
+    vals: s,
+    fields: [
+      {k: 'tipo', l: 'Tipo de mantenimiento', type: 'select', opts: [['preventivo', 'Preventivo (plan)'], ['correctivo', 'Correctivo (avería/reparación)'], ['predictivo', 'Predictivo (diagnosis/inspección)']]},
+      {k: 'titulo', l: 'Descripción', req: true, ph: 'Ej. Revisión 150.000 km'},
+      {type: 'row', fields: [{k: 'fecha', l: 'Fecha', type: 'date', req: true}, {k: 'km', l: 'Kilometraje', type: 'num', int: true, req: true}]},
+      {k: 'taller', l: 'Taller / quién lo hizo', ph: 'Taller, concesionario o “yo mismo”'},
+      {type: 'html', html: `${fault ? `<div class="warnbox">Vinculada a la avería: <b>${esc(fault.titulo)}</b></div>` : ''}<div class="fld"><label>Operaciones del plan realizadas</label><div class="chklist">${plan.map(p => `<label class="chk" style="display:flex;gap:8px;padding:7px 0;border-bottom:1px solid var(--line)"><input type="checkbox" data-pid="${p.id}" ${(s.planIds || []).includes(p.id) ? 'checked' : ''}> ${esc(p.nombre)}</label>`).join('') || '<div class="note">No hay operaciones en el plan</div>'}</div></div>
+        <div class="fld"><label>Componentes / materiales sustituidos</label><div class="lines" id="lnBox"></div></div>`},
+      {k: 'manoObra', l: 'Mano de obra (€)', type: 'num'},
+      {k: 'notas', l: 'Observaciones', type: 'textarea', ph: 'Qué se encontró, recomendaciones del taller, próxima revisión…'},
+      {type: 'html', html: photoField + `<div class="fld"><label>Total</label><div id="svTot" style="font-size:20px;font-weight:800">${fEur(svcCost(s))}</div></div>`},
+    ],
+    after: f => {
+      L = linesEditor(f, s.lineas); P = photoEditor(f, s.fotos);
+      const upd = () => { const mo = dec(f.querySelector('#f_manoObra').value) || 0; f.querySelector('#svTot').textContent = fEur(L.reduce((a, l) => a + (l.cant || 1) * (l.precio || 0), 0) + mo); };
+      f.addEventListener('input', upd); f.addEventListener('click', () => setTimeout(upd, 0));
+    },
+    onSave: async (o, f) => {
+      o.planIds = [...f.querySelectorAll('[data-pid]:checked')].map(x => x.dataset.pid);
+      o.lineas = L.filter(l => l.nombre || l.precio);
+      const old = new Set(s.fotos || []); const now = new Set(P);
+      for (const id of old) if (!now.has(id)) await delPhoto(id);
+      const rec = {...s, ...o, fotos: P, id: s.id || uid()};
+      await save('services', rec);
+      for (const l of rec.lineas) if (l.compId) { const c = S.components.find(x => x.id === l.compId); if (c && (!c.fechaMontaje || rec.fecha >= c.fechaMontaje)) { c.fechaMontaje = rec.fecha; c.kmMontaje = rec.km; c.lecturas = []; if (l.ref) c.ref = l.ref; await save('components', c); } }
+      if (rec.faultId) { const ft = S.faults.find(x => x.id === rec.faultId); if (ft && ft.estado !== 'resuelta') { ft.estado = 'resuelta'; ft.serviceId = rec.id; await save('faults', ft); } }
+      toast('Intervención guardada');
+    },
+    onDelete: isNew ? null : async () => { for (const id of s.fotos || []) await delPhoto(id); await remove('services', s.id); },
+  });
+}
+
+/* ---------- AVERÍAS ---------- */
+let avFilter = 'abiertas';
+views.averias = v => {
+  const list = of('faults', v).filter(f => avFilter === 'todas' || (avFilter === 'abiertas' ? f.estado !== 'resuelta' : f.estado === 'resuelta')).sort((a, b) => b.fecha.localeCompare(a.fecha));
+  return `<h2>Averías y reparaciones</h2>
+  <div class="seg">${[['abiertas', 'Abiertas'], ['resueltas', 'Resueltas'], ['todas', 'Todas']].map(([k, l]) => `<button class="${avFilter === k ? 'on' : ''}" onclick="avFilter='${k}';render()">${l}</button>`).join('')}</div>
+  <div class="card">${list.length ? list.map(faultRow).join('') : '<div class="empty">Sin averías en esta vista</div>'}</div>`;
+};
+function formFault(f) {
+  const v = curV(); const isNew = !f; f = f || {vehicleId: v.id, fecha: todayISO(), km: curKm(v), estado: 'abierta', gravedad: 'media', fotos: []};
+  const svc = f.serviceId ? S.services.find(s => s.id === f.serviceId) : null;
+  let P;
+  form({
+    title: isNew ? 'Nueva avería' : 'Avería',
+    vals: f,
+    fields: [
+      {k: 'titulo', l: 'Avería / síntoma principal', req: true, ph: 'Ej. Testigo de motor y tirones en aceleración'},
+      {type: 'row', fields: [{k: 'fecha', l: 'Fecha', type: 'date', req: true}, {k: 'km', l: 'Kilometraje', type: 'num', int: true}]},
+      {type: 'row', fields: [{k: 'gravedad', l: 'Gravedad', type: 'select', opts: [['leve', 'Leve'], ['media', 'Media'], ['grave', 'Grave (no circular)']]}, {k: 'estado', l: 'Estado', type: 'select', opts: [['abierta', 'Abierta'], ['diagnostico', 'En diagnóstico'], ['resuelta', 'Resuelta']]}]},
+      {k: 'sistema', l: 'Sistema afectado', type: 'select', opts: ['Motor', 'Inyección / alimentación', 'Turbo / admisión', 'Escape / EGR / FAP', 'Transmisión', 'Frenos', 'Suspensión', 'Dirección', 'Refrigeración', 'Climatización', 'Electricidad / electrónica', 'Carrocería', 'Otros']},
+      {k: 'codigos', l: 'Códigos de avería (OBD)', ph: 'Ej. P0401, P2263'},
+      {k: 'sintomas', l: 'Síntomas y condiciones', type: 'textarea', ph: 'Cuándo ocurre: en frío/caliente, a qué velocidad, ruidos, testigos…'},
+      {k: 'diagnostico', l: 'Diagnóstico / causa', type: 'textarea'},
+      {k: 'solucion', l: 'Solución aplicada', type: 'textarea'},
+      {type: 'html', html: photoField + (svc ? `<div class="warnbox">Reparación registrada: <a href="#" onclick="formService(S.services.find(x=>x.id==='${svc.id}'));return false">${esc(svc.titulo)} · ${fDate(svc.fecha)} · ${fEur(svcCost(svc))}</a></div>` : '') +
+        (!isNew && !svc ? `<button class="btn sec block" id="toRep" type="button">🔧 Registrar la reparación (intervención correctiva)</button>` : '')},
+    ],
+    after: s => { P = photoEditor(s, f.fotos); const b = s.querySelector('#toRep'); if (b) b.onclick = () => { s.close(); formService(null, {tipo: 'correctivo', titulo: 'Reparación: ' + f.titulo, faultId: f.id, notas: f.diagnostico || ''}); }; },
+    onSave: async o => {
+      const old = new Set(f.fotos || []); for (const id of old) if (!P.includes(id)) await delPhoto(id);
+      await save('faults', {...f, ...o, fotos: P, id: f.id || uid()}); toast('Avería guardada');
+    },
+    onDelete: isNew ? null : async () => { for (const id of f.fotos || []) await delPhoto(id); await remove('faults', f.id); },
+  });
+}
+
+/* ---------- MÁS ---------- */
+views.mas = v => `<h2>Más</h2><div class="card menu">
+  ${[['vehiculos', '🚗', 'Vehículos', 'Fichas, ITV, seguro, datos técnicos'], ['km', '📍', 'Registro de kilometraje', 'Lecturas del cuentakilómetros'], ['componentes', '🔩', 'Componentes (predictivo)', 'Desgaste, mediciones y vida útil'], ['gastos', '💶', 'Gastos', 'Coste total, por categoría y coste/km'], ['informes', '📄', 'Informes PDF', 'Historial completo para imprimir o compartir'], ['copias', '💾', 'Copias de seguridad', 'Exportar / restaurar todos los datos'], ['ajustes', '⚙️', 'Ajustes y avisos', 'Umbrales de aviso, notificaciones']]
+    .map(([h, i, t, s]) => `<a href="#${h}"><span class="ic">${i}</span><div><div>${t}</div><div class="s">${s}</div></div></a>`).join('')}</div>
+  <p class="note" style="text-align:center">GESCAR v1.0 · datos guardados solo en este dispositivo</p>`;
+
+/* ---------- VEHÍCULOS ---------- */
+views.vehiculos = () => `<h2>Vehículos</h2>${S.vehicles.map(v => `<div class="card vcard" style="border-left-color:${v.color}" onclick="formVehicle(S.vehicles.find(x=>x.id==='${v.id}'))">
+  <div class="row"><div class="grow"><div style="font-weight:750;font-size:16px">${esc(v.alias || v.modelo)}</div><div class="note">${esc([v.marca, v.modelo].filter(Boolean).join(' '))}</div></div>${v.id === curV()?.id ? '<span class="pill info">activo</span>' : ''}</div>
+  <div class="kv" style="margin-top:8px"><span>Matrícula</span><span>${esc(v.matricula || '—')}</span><span>Motor</span><span>${esc(v.motor || '—')}</span><span>Año</span><span>${esc(v.anio || '—')}</span><span>Km actual</span><span>${fKm(curKm(v))}</span><span>ITV</span><span>${fDate(v.itv)}</span><span>Registros</span><span>${of('services', v).length} intervenciones · ${of('faults', v).length} averías</span></div></div>`).join('') || '<div class="card empty">Sin vehículos</div>'}
+  <button class="btn block" onclick="formVehicle()">＋ Añadir vehículo</button>`;
+function formVehicle(v) {
+  const isNew = !v; v = v || {color: VCOLORS[S.vehicles.length % VCOLORS.length]};
+  form({
+    title: isNew ? 'Nuevo vehículo' : 'Ficha del vehículo',
+    vals: v,
+    fields: [
+      {k: 'alias', l: 'Nombre corto', req: true, ph: 'Ej. Mercedes CLK'},
+      {type: 'row', fields: [{k: 'marca', l: 'Marca'}, {k: 'modelo', l: 'Modelo'}]},
+      {type: 'row', fields: [{k: 'matricula', l: 'Matrícula'}, {k: 'anio', l: 'Año', type: 'num', int: true}]},
+      {type: 'row', fields: [{k: 'motor', l: 'Motor'}, {k: 'combustible', l: 'Combustible', type: 'select', opts: ['Diésel', 'Gasolina', 'Híbrido', 'Eléctrico', 'GLP']}]},
+      {k: 'vin', l: 'Nº bastidor (VIN)'},
+      {type: 'row', fields: [{k: 'fechaCompra', l: 'Fecha de alta en GESCAR / compra', type: 'date'}, {k: 'kmInicial', l: 'Km en esa fecha', type: 'num', int: true}]},
+      {type: 'row', fields: [{k: 'itv', l: 'Próxima ITV', type: 'date'}, {k: 'seguro', l: 'Vencimiento seguro', type: 'date'}]},
+      {type: 'row', fields: [{k: 'neumaticos', l: 'Medida neumáticos', ph: '205/55 R16'}, {k: 'aceite', l: 'Aceite motor', ph: '5W-40 229.5'}]},
+      {k: 'color', l: 'Color identificativo', type: 'select', opts: VCOLORS.map((c, i) => [c, ['Azul', 'Rojo', 'Verde', 'Violeta', 'Naranja', 'Turquesa'][i]])},
+      ...(isNew ? [{k: 'plan', l: 'Plan de mantenimiento inicial', type: 'select', opts: [['general', 'Plan general'], ['om612', 'Mercedes OM612 (CLK 270 CDI)'], ['dv6', 'PSA 1.6 HDi (Xsara Picasso)'], ['ninguno', 'Vacío']]}, {k: 'comps', l: 'Crear componentes base (neumáticos, pastillas, batería)', type: 'check', def: true}] : []),
+      {k: 'notas', l: 'Notas', type: 'textarea'},
+    ],
+    onSave: async o => {
+      const {plan, comps, ...rest} = o; const rec = {...v, ...rest, id: v.id || uid()};
+      await save('vehicles', rec);
+      if (isNew) { if (plan !== 'ninguno') await loadPlan(rec, plan); if (comps) await loadComps(rec); await setMeta('vid', rec.id); }
+      if (rec.kmInicial != null && !rec.fechaCompra) { rec.fechaCompra = todayISO(); await save('vehicles', rec); }
+      toast('Vehículo guardado');
+    },
+    onDelete: isNew ? null : async () => {
+      if (!await ask(`Se borrará TODO el historial de ${v.alias}: intervenciones, averías, gastos, plan y fotos.`, 'Borrar todo', true)) return;
+      for (const st of ['odometer', 'plan', 'services', 'faults', 'components', 'expenses']) for (const r of S[st].filter(x => x.vehicleId === v.id)) { for (const ph of r.fotos || []) await delPhoto(ph); await remove(st, r.id); }
+      await remove('vehicles', v.id); if (S.meta.vid === v.id) await setMeta('vid', S.vehicles[0]?.id || null);
+    },
+  });
+}
+
+/* ---------- KILOMETRAJE ---------- */
+views.km = v => {
+  const pts = of('odometer', v).sort((a, b) => b.fecha.localeCompare(a.fecha) || b.km - a.km);
+  const kd = kmDia(v);
+  return `<h2>Registro de kilometraje</h2>
+  <div class="grid2" style="margin-bottom:10px"><div class="kpi"><div class="n">${fKm(curKm(v))}</div><div class="l">Actual</div></div><div class="kpi"><div class="n">${Math.round(kd * 30).toLocaleString('es-ES')}</div><div class="l">km / mes (media)</div></div></div>
+  ${kmChart(v)}
+  <div class="card">${pts.length ? pts.map(o => `<div class="item" onclick="formOdo(S.odometer.find(x=>x.id==='${o.id}'))"><div class="grow"><div class="t">${fKm(o.km)}</div><div class="s">${fDate(o.fecha)}${o.nota ? ' · ' + esc(o.nota) : ''}</div></div></div>`).join('') : '<div class="empty">Sin lecturas. Pulsa “＋ Km” arriba.</div>'}</div>
+  <p class="note">Las intervenciones y averías también cuentan como lecturas para calcular el uso medio.</p>`;
+};
+function kmChart(v) {
+  const p = kmPoints(v); if (p.length < 2) return '';
+  const W = 340, H = 130, pad = 28; const t0 = new Date(p[0].fecha).getTime(), t1 = new Date(p[p.length - 1].fecha).getTime() || t0 + 1;
+  const k0 = Math.min(...p.map(x => x.km)), k1 = Math.max(...p.map(x => x.km)) || k0 + 1;
+  const X = f => pad + (new Date(f).getTime() - t0) / Math.max(1, t1 - t0) * (W - pad - 8), Y = k => H - 18 - (k - k0) / Math.max(1, k1 - k0) * (H - 30);
+  return `<div class="card"><svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Evolución del kilometraje">
+    <polyline fill="none" stroke="${v.color}" stroke-width="2.5" points="${p.map(x => X(x.fecha) + ',' + Y(x.km)).join(' ')}"/>
+    ${p.map(x => `<circle cx="${X(x.fecha)}" cy="${Y(x.km)}" r="2.5" fill="${v.color}"/>`).join('')}
+    <text x="${pad}" y="${H - 3}" font-size="10" fill="currentColor" opacity=".6">${fDate(p[0].fecha)}</text>
+    <text x="${W - 8}" y="${H - 3}" font-size="10" text-anchor="end" fill="currentColor" opacity=".6">${fDate(p[p.length - 1].fecha)}</text>
+    <text x="2" y="${Y(k1) + 4}" font-size="10" fill="currentColor" opacity=".6">${Math.round(k1 / 1000)}k</text>
+    <text x="2" y="${Y(k0)}" font-size="10" fill="currentColor" opacity=".6">${Math.round(k0 / 1000)}k</text></svg></div>`;
+}
+function formOdo(o) {
+  const v = curV(); if (!v) { formVehicle(); return; }
+  const isNew = !o; o = o || {vehicleId: v.id, fecha: todayISO()};
+  form({
+    title: (isNew ? 'Lectura de km · ' : 'Lectura · ') + (v.alias || v.modelo), vals: o,
+    fields: [{k: 'km', l: 'Kilometraje del cuentakilómetros', type: 'num', int: true, req: true, ph: curKm(v) != null ? 'Último: ' + Math.round(curKm(v)) : ''}, {k: 'fecha', l: 'Fecha', type: 'date', req: true}, {k: 'nota', l: 'Nota', ph: 'Opcional'}],
+    onSave: async x => {
+      const c = curKm(v);
+      if (isNew && c != null && x.km < c && !await ask(`El kilometraje introducido (${fKm(x.km)}) es menor que el actual (${fKm(c)}). ¿Guardar igualmente?`)) return false;
+      await save('odometer', {...o, ...x, id: o.id || uid()});
+      if (v.kmInicial == null) { v.kmInicial = x.km; v.fechaCompra = v.fechaCompra || x.fecha; await save('vehicles', v); }
+      toast('Kilometraje actualizado');
+    },
+    onDelete: isNew ? null : async () => remove('odometer', o.id),
+  });
+}
+
+/* ---------- COMPONENTES / PREDICTIVO ---------- */
+views.componentes = v => {
+  const list = of('components', v).map(c => ({c, st: compStatus(c)})).sort((a, b) => b.st.pct - a.st.pct);
+  return `<h2>Componentes · mantenimiento predictivo</h2>
+  <p class="note">Registra cuándo se montó cada componente y ve anotando mediciones (profundidad de dibujo, espesor de pastillas…). GESCAR calcula la tendencia y estima cuándo habrá que sustituirlo.</p>
+  <div class="card">${list.length ? list.map(({c, st}) => `<div class="item" onclick="formComp(S.components.find(x=>x.id==='${c.id}'))"><div class="grow"><div class="t">${esc(c.nombre)}</div>
+    <div class="s">${c.fechaMontaje ? 'Montado ' + fDate(c.fechaMontaje) + ' · ' + fKm(c.kmMontaje) : '<b>Fecha/km de montaje sin indicar</b>'}${c.lecturas?.length ? ' · última medida ' + c.lecturas[c.lecturas.length - 1].valor + ' ' + (c.medida?.unidad || '') : ''}</div>
+    ${st.estFecha ? `<div class="s">Sustitución estimada: ${fDate(st.estFecha)}${st.estKm ? ' · ~' + fKm(st.estKm) : ''} (${st.motivo})</div>` : ''}
+    <div class="bar"><i class="${st.status}" style="width:${Math.min(100, Math.round(st.pct * 100))}%"></i></div></div>
+    <div class="r">${Math.round(st.pct * 100)}%<br><span class="pill ${c.activo === false ? 'grey' : st.status}">${c.activo === false ? 'Inactivo' : {bad: 'Sustituir', warn: 'Vigilar', ok: 'Bien', grey: 'Sin datos'}[st.status]}</span></div></div>`).join('') : '<div class="empty">Sin componentes</div>'}</div>
+  <button class="btn sec block" onclick="formComp()">＋ Componente</button>`;
+};
+function formComp(c) {
+  const v = curV(); const isNew = !c; c = c || {vehicleId: v.id, lecturas: [], activo: true, medida: null};
+  const m = c.medida || {};
+  const lect = (c.lecturas || []).map((l, i) => `<div class="item" style="cursor:default"><div class="grow">${fDate(l.fecha)} · ${fKm(l.km)}</div><div class="r"><b>${l.valor} ${esc(m.unidad || '')}</b> <button class="btn sec sm" data-dl="${i}">✕</button></div></div>`).join('');
+  const st = c.id ? compStatus(c) : null;
+  form({
+    title: isNew ? 'Nuevo componente' : 'Componente', vals: {...c, mUnidad: m.unidad, mNuevo: m.nuevo, mLimite: m.limite},
+    fields: [
+      {k: 'nombre', l: 'Componente', req: true, ph: 'Ej. Neumático delantero izquierdo'},
+      {type: 'row', fields: [{k: 'sistema', l: 'Sistema'}, {k: 'ref', l: 'Marca / referencia'}]},
+      {type: 'row', fields: [{k: 'fechaMontaje', l: 'Fecha de montaje', type: 'date'}, {k: 'kmMontaje', l: 'Km de montaje', type: 'num', int: true}]},
+      {type: 'row', fields: [{k: 'vidaKm', l: 'Vida útil (km)', type: 'num', int: true}, {k: 'vidaMeses', l: 'Vida útil (meses)', type: 'num', int: true}]},
+      {type: 'html', html: `<div class="card" style="background:var(--bg)"><b>Medición de desgaste (opcional)</b><div class="note" style="margin-bottom:8px">Ej. dibujo neumático: nuevo 8 mm, límite 1,6 mm (recomendado 2–3 mm).</div>`},
+      {type: 'row', fields: [{k: 'mNuevo', l: 'Valor nuevo', type: 'num'}, {k: 'mLimite', l: 'Valor límite', type: 'num'}]},
+      {k: 'mUnidad', l: 'Unidad', ph: 'mm'},
+      {type: 'html', html: `</div>` + (isNew ? '' : `<h3>Mediciones</h3><div class="card" id="lectBox">${lect || '<div class="note">Sin mediciones</div>'}</div>
+        <div class="f2"><div class="fld"><label>Nueva medida</label><input id="nlVal" inputmode="decimal" placeholder="${esc(m.unidad || 'valor')}"></div><div class="fld"><label>Km</label><input id="nlKm" inputmode="numeric" value="${curKm(v) ?? ''}"></div></div>
+        <button class="btn sec sm" id="nlAdd" type="button">＋ Añadir medida (hoy)</button>
+        ${st && st.estFecha ? `<div class="warnbox" style="margin-top:10px">Estimación: sustituir hacia <b>${fDate(st.estFecha)}</b>${st.estKm ? ` (~${fKm(st.estKm)})` : ''} según ${st.motivo}. Desgaste actual ${Math.round(st.pct * 100)}%.</div>` : ''}`)},
+      {k: 'notas', l: 'Notas', type: 'textarea'},
+      {k: 'activo', l: 'Componente activo', type: 'check', def: true},
+    ],
+    after: s => {
+      const add = s.querySelector('#nlAdd');
+      if (add) add.onclick = async () => { const val = dec(s.querySelector('#nlVal').value), km = num(s.querySelector('#nlKm').value); if (val == null) { toast('Indica la medida'); return; } c.lecturas = [...(c.lecturas || []), {fecha: todayISO(), km, valor: val}].sort((a, b) => (a.km || 0) - (b.km || 0)); await save('components', c); s.close(); render(); formComp(c); toast('Medida añadida'); };
+      s.querySelectorAll('[data-dl]').forEach(b => b.onclick = async () => { c.lecturas.splice(+b.dataset.dl, 1); await save('components', c); s.close(); formComp(c); });
+    },
+    onSave: async o => {
+      const {mUnidad, mNuevo, mLimite, ...rest} = o;
+      await save('components', {...c, ...rest, medida: (mNuevo != null || mLimite != null) ? {unidad: mUnidad || '', nuevo: mNuevo, limite: mLimite} : null, id: c.id || uid()}); toast('Componente guardado');
+    },
+    onDelete: isNew ? null : async () => remove('components', c.id),
+  });
+}
+
+/* ---------- GASTOS ---------- */
+let gYear = String(new Date().getFullYear());
+const GCATS = ['Combustible', 'Seguro', 'Impuesto circulación', 'ITV', 'Neumáticos', 'Lavado', 'Aparcamiento / peajes', 'Accesorios', 'Multas', 'Otros'];
+views.gastos = v => {
+  const all = allCosts(v); const years = [...new Set(all.map(c => c.fecha.slice(0, 4)).concat(String(new Date().getFullYear())))].sort().reverse();
+  const rows = gYear === 'todo' ? all : all.filter(c => c.fecha.startsWith(gYear));
+  const tot = rows.reduce((a, c) => a + c.importe, 0);
+  const byCat = {}; rows.forEach(c => byCat[c.cat] = (byCat[c.cat] || 0) + c.importe);
+  const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]); const max = cats[0]?.[1] || 1;
+  // km recorridos en el periodo
+  const p = kmPoints(v).filter(x => gYear === 'todo' || x.fecha.startsWith(gYear));
+  const kmR = p.length >= 2 ? p[p.length - 1].km - p[0].km : 0;
+  return `<h2>Gastos</h2>
+  <div class="seg">${['todo', ...years].slice(0, 5).map(y => `<button class="${gYear === y ? 'on' : ''}" onclick="gYear='${y}';render()">${y === 'todo' ? 'Total' : y}</button>`).join('')}</div>
+  <div class="grid2" style="margin-bottom:10px"><div class="kpi"><div class="n">${fEur(tot)}</div><div class="l">Gasto ${gYear === 'todo' ? 'total' : gYear}</div></div><div class="kpi"><div class="n">${kmR > 0 ? (tot / kmR).toLocaleString('es-ES', {maximumFractionDigits: 3}) + ' €' : '—'}</div><div class="l">Coste por km${kmR > 0 ? ' (' + fKm(kmR) + ')' : ''}</div></div></div>
+  ${cats.length ? `<div class="card">${cats.map(([k, n]) => `<div style="margin:6px 0"><div class="row"><div class="grow">${esc(k)}</div><b>${fEur(n)}</b></div><div class="bar"><i style="width:${n / max * 100}%;background:var(--v1)"></i></div></div>`).join('')}</div>` : ''}
+  <h3>Movimientos</h3>
+  <div class="card">${rows.length ? rows.map(c => `<div class="item" onclick="${c.exp ? `formExpense(S.expenses.find(x=>x.id==='${c.ref}'))` : `formService(S.services.find(x=>x.id==='${c.ref}'))`}"><div class="grow"><div class="t">${esc(c.concepto)}</div><div class="s">${fDate(c.fecha)} · ${esc(c.cat)}</div></div><div class="r"><b>${fEur(c.importe)}</b></div></div>`).join('') : '<div class="empty">Sin gastos</div>'}</div>
+  <p class="note">Las intervenciones del historial se suman automáticamente. Usa ＋ para otros gastos (seguro, impuesto, combustible…).</p>`;
+};
+function formExpense(e) {
+  const v = curV(); const isNew = !e; e = e || {vehicleId: v.id, fecha: todayISO(), km: curKm(v), categoria: 'Combustible'};
+  form({
+    title: isNew ? 'Nuevo gasto' : 'Gasto', vals: e,
+    fields: [{k: 'categoria', l: 'Categoría', type: 'select', opts: GCATS}, {k: 'concepto', l: 'Concepto', req: true}, {type: 'row', fields: [{k: 'importe', l: 'Importe (€)', type: 'num', req: true}, {k: 'fecha', l: 'Fecha', type: 'date', req: true}]}, {k: 'km', l: 'Km (opcional)', type: 'num', int: true}],
+    onSave: async o => { await save('expenses', {...e, ...o, id: e.id || uid()}); toast('Gasto guardado'); },
+    onDelete: isNew ? null : async () => remove('expenses', e.id),
+  });
+}
+
+/* ---------- INFORMES PDF ---------- */
+views.informes = v => `<h2>Informe PDF</h2>
+  <div class="card">
+  <div class="kv" style="margin-bottom:10px"><span>Vehículo</span><span><b>${esc(v.alias)}</b> ${esc(v.matricula || '')}</span></div>
+  <div class="f2"><div class="fld"><label>Desde</label><input type="date" id="rDesde"></div><div class="fld"><label>Hasta</label><input type="date" id="rHasta" value="${todayISO()}"></div></div>
+  ${[['rPlan', 'Estado del plan preventivo', 1], ['rHist', 'Historial de intervenciones', 1], ['rAv', 'Averías', 1], ['rComp', 'Componentes y desgaste', 1], ['rGas', 'Resumen de gastos', 1], ['rFot', 'Incluir fotografías', 0]].map(([id, l, c]) => `<label class="chk" style="display:flex;gap:8px;padding:6px 0"><input type="checkbox" id="${id}" ${c ? 'checked' : ''}> ${l}</label>`).join('')}
+  <button class="btn block" style="margin-top:10px" onclick="makeReport()">📄 Generar informe</button>
+  </div>
+  <p class="note">En iPhone: tras pulsar “Generar”, en la hoja de impresión pulsa <b>Compartir</b> (o pellizca la vista previa) para <b>guardar como PDF</b> en Archivos, enviarlo por correo o WhatsApp.</p>`;
+async function makeReport() {
+  const v = curV(); const d0 = $('#rDesde').value || '0000', d1 = $('#rHasta').value || '9999'; const inR = f => f >= d0 && f <= d1;
+  const ck = id => $('#' + id).checked; const fot = ck('rFot');
+  const imgs = async ids => { if (!fot || !ids?.length) return ''; let h = '<div class="pimgs">'; for (const id of ids) { const r = DB.mem ? {blob: memPhotos[id]} : await DB.get('photos', id); if (r?.blob) h += `<img src="${await blobToDataURL(r.blob)}">`; } return h + '</div>'; };
+  let h = `<h1>Informe de mantenimiento · ${esc(v.alias)}</h1>
+    <div>${esc([v.marca, v.modelo, v.motor].filter(Boolean).join(' · '))} · Matrícula ${esc(v.matricula || '—')} · VIN ${esc(v.vin || '—')}</div>
+    <div>Km actual: <b>${fKm(curKm(v))}</b> · Periodo: ${d0 === '0000' ? 'desde el inicio' : fDate(d0)} – ${fDate(d1 === '9999' ? todayISO() : d1)} · Emitido ${fDate(todayISO())}</div>`;
+  if (ck('rPlan')) {
+    h += `<h2>Plan de mantenimiento preventivo</h2><table><tr><th>Operación</th><th>Intervalo</th><th>Última</th><th>Próxima</th><th>Estado</th></tr>` +
+      of('plan', v).filter(p => p.activo !== false).map(p => { const s = planStatus(p); return `<tr><td>${esc(p.nombre)}</td><td>${[p.intKm ? fKm(p.intKm) : '', p.intMeses ? p.intMeses + ' m' : ''].filter(Boolean).join(' / ')}</td><td>${s.ld ? fDate(s.ld.fecha) + '<br>' + fKm(s.ld.km) : '—'}</td><td>${[s.nextKm ? fKm(s.nextKm) : '', s.nextFecha ? fDate(s.nextFecha) : ''].filter(Boolean).join('<br>') || '—'}</td><td>${STATUS[s.status]}</td></tr>`; }).join('') + `</table>`;
+  }
+  if (ck('rHist')) {
+    const list = of('services', v).filter(s => inR(s.fecha)).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    h += `<h2>Historial de intervenciones (${list.length})</h2>`;
+    for (const s of list) {
+      const ops = (s.planIds || []).map(id => S.plan.find(p => p.id === id)?.nombre).filter(Boolean);
+      h += `<div class="avoid"><table><tr><th colspan="4">${fDate(s.fecha)} · ${fKm(s.km)} · ${esc(s.titulo)} <span style="font-weight:400">(${esc(s.tipo)}${s.taller ? ' · ' + esc(s.taller) : ''})</span></th></tr>
+        ${ops.length ? `<tr><td colspan="4"><b>Operaciones:</b> ${ops.map(esc).join(', ')}</td></tr>` : ''}
+        ${(s.lineas || []).map(l => `<tr><td>${esc(l.nombre)}</td><td>${esc(l.ref || '')}</td><td>${l.cant ?? 1}</td><td>${fEur((l.cant || 1) * (l.precio || 0))}</td></tr>`).join('')}
+        ${s.manoObra ? `<tr><td colspan="3">Mano de obra</td><td>${fEur(s.manoObra)}</td></tr>` : ''}
+        <tr><td colspan="3"><b>Total</b></td><td><b>${fEur(svcCost(s))}</b></td></tr>
+        ${s.notas ? `<tr><td colspan="4">${esc(s.notas)}</td></tr>` : ''}</table>${await imgs(s.fotos)}</div>`;
+    }
+  }
+  if (ck('rAv')) {
+    const list = of('faults', v).filter(f => inR(f.fecha)).sort((a, b) => a.fecha.localeCompare(b.fecha));
+    h += `<h2>Averías (${list.length})</h2>`;
+    for (const f of list) h += `<div class="avoid"><table><tr><th colspan="2">${fDate(f.fecha)} · ${fKm(f.km)} · ${esc(f.titulo)} (${esc(f.estado)})</th></tr>
+      ${[['Sistema', f.sistema], ['Códigos', f.codigos], ['Síntomas', f.sintomas], ['Diagnóstico', f.diagnostico], ['Solución', f.solucion]].filter(x => x[1]).map(([k, x]) => `<tr><td style="width:22%">${k}</td><td>${esc(x)}</td></tr>`).join('')}</table>${await imgs(f.fotos)}</div>`;
+  }
+  if (ck('rComp')) {
+    h += `<h2>Componentes y desgaste</h2><table><tr><th>Componente</th><th>Montaje</th><th>Desgaste</th><th>Sustitución estimada</th></tr>` +
+      of('components', v).filter(c => c.activo !== false).map(c => { const s = compStatus(c); return `<tr><td>${esc(c.nombre)}${c.ref ? '<br>' + esc(c.ref) : ''}</td><td>${c.fechaMontaje ? fDate(c.fechaMontaje) + '<br>' + fKm(c.kmMontaje) : '—'}</td><td>${Math.round(s.pct * 100)}%</td><td>${s.estFecha ? fDate(s.estFecha) + (s.estKm ? ' · ' + fKm(s.estKm) : '') : '—'}</td></tr>`; }).join('') + `</table>`;
+  }
+  if (ck('rGas')) {
+    const rows = allCosts(v).filter(c => inR(c.fecha)); const byCat = {}; rows.forEach(c => byCat[c.cat] = (byCat[c.cat] || 0) + c.importe);
+    h += `<h2>Resumen de gastos</h2><table><tr><th>Categoría</th><th>Importe</th></tr>${Object.entries(byCat).sort((a, b) => b[1] - a[1]).map(([k, n]) => `<tr><td>${esc(k)}</td><td>${fEur(n)}</td></tr>`).join('')}<tr><td><b>Total</b></td><td><b>${fEur(rows.reduce((a, c) => a + c.importe, 0))}</b></td></tr></table>`;
+  }
+  h += `<p style="font-size:8pt;color:#666;margin-top:14px">Generado con GESCAR</p>`;
+  $('#printArea').innerHTML = h;
+  document.title = `GESCAR_${(v.matricula || v.alias).replace(/\s+/g, '_')}_${todayISO()}`;
+  setTimeout(() => { try { window.print(); } catch (e) { toast('La impresión no está disponible en esta vista'); } setTimeout(() => document.title = 'GESCAR · Mantenimiento de vehículos', 1500); }, 300);
+}
+
+/* ---------- COPIAS DE SEGURIDAD ---------- */
+views.copias = () => {
+  const lb = S.meta.lastBackup;
+  return `<h2>Copias de seguridad</h2>
+  <div class="card"><div class="kv"><span>Última copia</span><span>${lb ? fDate(lb.slice(0, 10)) + ' ' + lb.slice(11, 16) : 'nunca'}</span><span>Vehículos</span><span>${S.vehicles.length}</span><span>Intervenciones</span><span>${S.services.length}</span><span>Averías</span><span>${S.faults.length}</span></div></div>
+  <button class="btn block" onclick="exportBackup(true)">💾 Copia completa (con fotos)</button>
+  <button class="btn sec block" style="margin-top:8px" onclick="exportBackup(false)">Copia ligera (sin fotos)</button>
+  <label class="btn sec block" style="margin-top:8px">📥 Restaurar desde archivo<input type="file" accept="application/json,.json" hidden onchange="importBackup(this.files[0]);this.value=''"></label>
+  <p class="note">Los datos se guardan solo en este iPhone, dentro de la app. Guarda la copia en <b>iCloud Drive</b> (Archivos) para no perderla si borras la app o cambias de teléfono. La copia incluye los dos vehículos, cada uno con su historial separado.</p>`;
+};
+async function shareOrDownload(blob, name, mime) {
+  const file = new File([blob], name, {type: mime});
+  try { if (navigator.canShare && navigator.canShare({files: [file]})) { await navigator.share({files: [file], title: name}); return true; } } catch (e) { if (e.name === 'AbortError') return false; }
+  try { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000); return true; } catch (e) { toast('No se pudo exportar en esta vista'); return false; }
+}
+async function exportBackup(withPhotos) {
+  toast('Preparando copia…');
+  const data = {}; for (const s of STORES) if (s !== 'photos' && s !== 'meta') data[s] = S[s];
+  const out = {app: 'GESCAR', formato: 1, fecha: new Date().toISOString(), meta: {vid: S.meta.vid, cfg: S.meta.cfg, seeded: true}, data, photos: []};
+  if (withPhotos) { const ph = DB.mem ? Object.entries(memPhotos).map(([id, blob]) => ({id, blob})) : await DB.all('photos'); for (const p of ph) out.photos.push({id: p.id, d: await blobToDataURL(p.blob)}); }
+  const ok = await shareOrDownload(new Blob([JSON.stringify(out)], {type: 'application/json'}), `GESCAR_copia_${todayISO()}.json`, 'application/json');
+  if (ok) { await setMeta('lastBackup', new Date().toISOString()); render(); }
+}
+async function importBackup(file) {
+  if (!file) return;
+  let j; try { j = JSON.parse(await file.text()); } catch (e) { toast('Archivo no válido'); return; }
+  if (j.app !== 'GESCAR' || !j.data) { toast('No es una copia de GESCAR'); return; }
+  const n = (j.data.services || []).length;
+  if (!await ask(`Restaurar la copia del ${fDate(j.fecha.slice(0, 10))} (${(j.data.vehicles || []).length} vehículos, ${n} intervenciones). Se SUSTITUIRÁN los datos actuales.`, 'Restaurar', true)) return;
+  for (const s of STORES) await DB.clear(s);
+  for (const s of STORES) if (s !== 'photos' && s !== 'meta') { S[s] = []; for (const r of j.data[s] || []) await save(s, r); }
+  for (const p of j.photos || []) { const blob = await dataURLToBlob(p.d); if (DB.mem) memPhotos[p.id] = blob; else await DB.put('photos', {id: p.id, blob}); }
+  S.meta = {}; for (const [k, v] of Object.entries(j.meta || {})) await setMeta(k, v);
+  await setMeta('lastBackup', j.fecha);
+  toast('Copia restaurada'); location.hash = '#inicio'; render();
+}
+
+/* ---------- AJUSTES Y AVISOS ---------- */
+views.ajustes = () => {
+  const n = ('Notification' in window) ? Notification.permission : 'no';
+  return `<h2>Ajustes y avisos</h2>
+  <div class="card">
+    <div class="f2"><div class="fld"><label>Avisar con (km de antelación)</label><input id="aKm" inputmode="numeric" value="${cfg('avisoKm')}"></div><div class="fld"><label>Avisar con (días de antelación)</label><input id="aDias" inputmode="numeric" value="${cfg('avisoDias')}"></div></div>
+    <div class="fld"><label>Uso estimado si aún no hay lecturas (km/día)</label><input id="aKmDia" inputmode="numeric" value="${cfg('kmDia')}"></div>
+    <button class="btn block" onclick="saveCfg()">Guardar ajustes</button>
+  </div>
+  <h3>Avisos automáticos</h3>
+  <div class="card">
+    <p style="margin-top:0">GESCAR revisa el plan cada vez que abres la app: muestra los avisos en Inicio, pone el número de pendientes en el icono y, si lo permites, lanza una notificación.</p>
+    <div class="kv" style="margin-bottom:10px"><span>Notificaciones</span><span>${{granted: '✅ Activadas', denied: '⛔ Bloqueadas en Ajustes del iPhone', default: 'Sin activar', no: 'No disponibles aquí'}[n]}</span></div>
+    ${n === 'default' ? `<button class="btn block" onclick="enableNotif()">🔔 Activar notificaciones</button>` : ''}
+    <button class="btn sec block" style="margin-top:8px" onclick="exportICS()">📅 Añadir próximos mantenimientos al Calendario</button>
+    <p class="note">En iPhone las notificaciones solo funcionan con GESCAR instalada en la pantalla de inicio (iOS 16.4 o superior). Para avisos aunque no abras la app, usa “Añadir al Calendario”: crea un evento con alarma para cada mantenimiento previsto de cada vehículo.</p>
+  </div>
+  <h3>Instalar en el iPhone</h3>
+  <div class="card note" style="font-size:14px">Abre GESCAR en <b>Safari</b> → botón <b>Compartir</b> → <b>Añadir a pantalla de inicio</b>. Se abrirá a pantalla completa y funcionará sin conexión.</div>`;
+};
+async function saveCfg() { await setMeta('cfg', {avisoKm: num($('#aKm').value) || 1000, avisoDias: num($('#aDias').value) || 30, kmDia: num($('#aKmDia').value) || 40}); toast('Ajustes guardados'); render(); }
+async function enableNotif() { try { const p = await Notification.requestPermission(); if (p === 'granted') { await setMeta('notifDay', null); checkNotify(); } render(); } catch (e) { toast('No disponible'); } }
+function updateBadge(al) { try { const n = S.vehicles.reduce((a, v) => a + alerts(v).filter(x => x.status === 'bad').length, 0); if (navigator.setAppBadge) n ? navigator.setAppBadge(n) : navigator.clearAppBadge(); } catch (e) {} }
+async function checkNotify() {
+  try {
+    if (!('Notification' in window) || Notification.permission !== 'granted' || S.meta.notifDay === todayISO()) return;
+    const lines = []; S.vehicles.forEach(v => { const a = alerts(v); const b = a.filter(x => x.status === 'bad').length, w = a.length - b; if (a.length) lines.push(`${v.alias}: ${b ? b + ' vencidos' : ''}${b && w ? ', ' : ''}${w ? w + ' próximos' : ''}`); });
+    if (!lines.length) return;
+    const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+    const opt = {body: lines.join('\n'), icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag: 'gescar-avisos'};
+    if (reg) await reg.showNotification('GESCAR · Mantenimiento pendiente', opt); else new Notification('GESCAR · Mantenimiento pendiente', opt);
+    await setMeta('notifDay', todayISO());
+  } catch (e) {}
+}
+async function exportICS() {
+  const ev = []; const stamp = new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z';
+  const icsEsc = s => String(s).replace(/[,;\\]/g, m => '\\' + m).replace(/\n/g, '\\n');
+  S.vehicles.forEach(v => {
+    of('plan', v).filter(p => p.activo !== false).forEach(p => { const st = planStatus(p); if (!st.estFecha) return; const f = (st.estFecha < todayISO() ? todayISO() : st.estFecha).replace(/-/g, '');
+      ev.push(`BEGIN:VEVENT\r\nUID:gescar-${p.id}@gescar\r\nDTSTAMP:${stamp}\r\nDTSTART;VALUE=DATE:${f}\r\nSUMMARY:${icsEsc(`🔧 ${v.alias}: ${p.nombre}`)}\r\nDESCRIPTION:${icsEsc(`Previsto por GESCAR. ${st.nextKm ? 'A los ' + fKm(st.nextKm) + '. ' : ''}${st.nextFecha ? 'Límite por tiempo ' + fDate(st.nextFecha) + '.' : ''}`)}\r\nBEGIN:VALARM\r\nTRIGGER:-P7D\r\nACTION:DISPLAY\r\nDESCRIPTION:${icsEsc(p.nombre)}\r\nEND:VALARM\r\nEND:VEVENT`); });
+    if (v.itv) ev.push(`BEGIN:VEVENT\r\nUID:gescar-itv-${v.id}@gescar\r\nDTSTAMP:${stamp}\r\nDTSTART;VALUE=DATE:${v.itv.replace(/-/g, '')}\r\nSUMMARY:${icsEsc('📄 ITV ' + v.alias)}\r\nBEGIN:VALARM\r\nTRIGGER:-P15D\r\nACTION:DISPLAY\r\nDESCRIPTION:ITV\r\nEND:VALARM\r\nEND:VEVENT`);
+  });
+  if (!ev.length) { toast('No hay mantenimientos con fecha prevista'); return; }
+  const ics = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//GESCAR//ES\r\nCALSCALE:GREGORIAN\r\n${ev.join('\r\n')}\r\nEND:VCALENDAR\r\n`;
+  await shareOrDownload(new Blob([ics], {type: 'text/calendar'}), 'GESCAR_mantenimientos.ics', 'text/calendar');
+}
+
+/* ---------- Botón + contextual ---------- */
+function quickAdd() {
+  const r = route();
+  if (r === 'historial') return formService();
+  if (r === 'averias') return formFault();
+  if (r === 'plan') return formPlan();
+  if (r === 'gastos') return formExpense();
+  if (r === 'componentes') return formComp();
+  if (r === 'km') return formOdo();
+  const s = sheet({title: 'Registrar en ' + (curV().alias || ''), body: `<div class="menu">
+    ${[['🔧', 'Intervención / mantenimiento', 'formService()'], ['⚠️', 'Avería', 'formFault()'], ['📍', 'Lectura de kilometraje', 'formOdo()'], ['💶', 'Gasto', 'formExpense()'], ['🔩', 'Medida de componente', "location.hash='#componentes'"]].map(([i, t, fn]) => `<a href="#" data-fn="${fn}"><span class="ic">${i}</span><div>${t}</div></a>`).join('')}</div>`});
+  s.querySelectorAll('[data-fn]').forEach(a => a.onclick = e => { e.preventDefault(); s.close(); new Function(a.dataset.fn)(); });
+}
+
+/* ================= Arranque ================= */
+(async function init() {
+  await DB.open();
+  if (DB.mem) toast('Aviso: este navegador no permite guardar datos. Se perderán al cerrar.');
+  try { await load(); } catch (e) { console.error(e); }
+  await seed();
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  render();
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('sw.js').then(() => checkNotify()).catch(() => checkNotify());
+  } else checkNotify();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+})();
+</script>
+</body>
+</html>
