@@ -1,0 +1,168 @@
+{
+  "app": "GESCAR-facturas",
+  "formato": 1,
+  "nota": "Facturas preparadas por Claude. GESCAR las ofrece al abrirse; al importarlas o descartarlas no vuelven a aparecer.",
+  "facturas": [
+    {
+      "id_import": "teodoro-alb-3477",
+      "vehiculo": null,
+      "modelo": null,
+      "matricula": null,
+      "bastidor": null,
+      "taller": "Neumáticos Teodoro · Pantoja (Toledo)",
+      "nif_taller": null,
+      "direccion_taller": "Avda. de Portugal, 26, 45290 Pantoja (Toledo)",
+      "telefono_taller": "610 855 565 · 656 852 223",
+      "numero": "Albarán 3477",
+      "fecha": "2025-11-24",
+      "km": null,
+      "tipo_mantenimiento": "preventivo",
+      "titulo": "Alineación de dirección (paralelo)",
+      "lineas": [
+        {
+          "descripcion": "Paralelo (alineación de dirección)",
+          "referencia": "",
+          "cantidad": 1,
+          "precio_unitario": null,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "servicio",
+          "accion": "ajuste",
+          "sistema": "Dirección",
+          "operacion_plan": "Alineación de dirección (paralelo)",
+          "componentes": []
+        }
+      ],
+      "base_imponible": null,
+      "iva_pct": null,
+      "iva_importe": null,
+      "total": null,
+      "forma_pago": null,
+      "observaciones": "Albarán manuscrito sin precio ni importe total. Anotado a mano en el albarán: Hnos. Alonso, C/ García Lorca, 20, Illescas, tel. 925 513 328.",
+      "averia_reparada": null,
+      "datos_vehiculo": {
+        "bastidor": null,
+        "matricula": null,
+        "aceite_especificacion": null,
+        "capacidad_aceite_l": null,
+        "neumaticos_medida": null,
+        "itv_proxima": null
+      },
+      "proxima_revision": {
+        "km": null,
+        "fecha": null,
+        "texto": null
+      },
+      "nuevas_operaciones": [
+        {
+          "nombre": "Alineación de dirección (paralelo)",
+          "sistema": "Dirección",
+          "intervalo_km": 20000,
+          "intervalo_meses": 24,
+          "motivo": "Realizada en este albarán y no estaba en el plan. Revisar cada 20.000 km o 2 años, y siempre al cambiar neumáticos o tras un golpe."
+        }
+      ],
+      "recomendaciones": [],
+      "confianza": 0.8,
+      "dudas": [
+        "El albarán no indica el vehículo: elige en la revisión si es el Mercedes o el Picasso.",
+        "No figuran kilómetros: introdúcelos (aunque sean aproximados) para que el plan calcule el próximo paralelo.",
+        "Sin precio ni total: si lo pagaste, escribe el importe para que cuente en los gastos.",
+        "Fecha manuscrita leída como 24/11/2025.",
+        "La anotación «Hnos. Alonso» parece un taller al que te derivaron; no se ha registrado como trabajo."
+      ]
+    },
+    {
+      "vehiculo": "Citroën Xsara Picasso",
+      "modelo": "Citroën Xsara Picasso (N68)",
+      "matricula": null,
+      "bastidor": null,
+      "taller": "Feu Vert Ibérica S.A.U. · Illescas",
+      "nif_taller": "A79783254",
+      "direccion_taller": "Calle Juan Carlos Onetti, C.C. Señorío Plaza, 45200 Illescas (Toledo)",
+      "telefono_taller": "825735784",
+      "numero": "VE2-1071074",
+      "fecha": "2026-05-29",
+      "km": 315417,
+      "tipo_mantenimiento": "preventivo",
+      "titulo": "Control del circuito de aire acondicionado y comprobación del filtro de habitáculo",
+      "lineas": [
+        {
+          "descripcion": "Comprobación filtro habitáculo (gratuita)",
+          "referencia": "899211",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "servicio",
+          "accion": "revision",
+          "sistema": "Climatización",
+          "operacion_plan": null,
+          "componentes": []
+        },
+        {
+          "descripcion": "Gestión pequeño material",
+          "referencia": "999995",
+          "cantidad": 1,
+          "precio_unitario": 1.69,
+          "descuento_pct": null,
+          "importe": 1.69,
+          "tipo": "tasa",
+          "accion": "otro",
+          "sistema": "Otros",
+          "operacion_plan": null,
+          "componentes": []
+        },
+        {
+          "descripcion": "Control del circuito de aire acondicionado",
+          "referencia": "999104",
+          "cantidad": 1,
+          "precio_unitario": 21.91,
+          "descuento_pct": null,
+          "importe": 21.91,
+          "tipo": "servicio",
+          "accion": "revision",
+          "sistema": "Climatización",
+          "operacion_plan": "Revisión circuito de aire acondicionado",
+          "componentes": []
+        }
+      ],
+      "base_imponible": 23.6,
+      "iva_pct": 21,
+      "iva_importe": 4.95,
+      "total": 28.55,
+      "forma_pago": "Tarjeta",
+      "observaciones": "Garantía legal de reparaciones de taller: 3 meses o 2.000 km. El filtro de habitáculo solo se comprobó (no se sustituyó).",
+      "averia_reparada": null,
+      "datos_vehiculo": {
+        "bastidor": null,
+        "matricula": null,
+        "aceite_especificacion": null,
+        "capacidad_aceite_l": null,
+        "neumaticos_medida": null,
+        "itv_proxima": null
+      },
+      "proxima_revision": {
+        "km": null,
+        "fecha": null,
+        "texto": null
+      },
+      "nuevas_operaciones": [
+        {
+          "nombre": "Revisión circuito de aire acondicionado",
+          "sistema": "Climatización",
+          "intervalo_km": null,
+          "intervalo_meses": 24,
+          "motivo": "Realizada en esta factura y no estaba en el plan. Control de presión, estanqueidad y rendimiento del A/C cada 2 años."
+        }
+      ],
+      "recomendaciones": [],
+      "confianza": 0.95,
+      "dudas": [
+        "En la factura, los importes de cada línea incluyen IVA (2,05 € y 26,50 €); aquí se han pasado a base imponible (1,69 € + 21,91 € = 23,60 €) para que cuadre con el desglose de IVA.",
+        "El teléfono del taller se lee 825735784; podría ser 925735784 (prefijo de Toledo)."
+      ],
+      "id_import": "feuvert-VE2-1071074"
+    }
+  ]
+}

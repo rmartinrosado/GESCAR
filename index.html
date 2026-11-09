@@ -1327,6 +1327,7 @@ views.inicio = v => {
   <div class="stage" id="stage">${S.vehicles.map(heroSlide).join('')}</div>
   ${S.vehicles.length > 1 ? `<div class="dots">${S.vehicles.map(x => `<i class="${x.id === v.id ? 'on' : ''}"></i>`).join('')}</div>` : ''}
   ${!v.foto && webFoto(v) ? `<p class="credit">Foto: <a href="${webFoto(v).page}" target="_blank" rel="noopener">${esc(webFoto(v).credito)}</a></p>` : ''}
+  ${pendingBox()}
   <div class="qa rv">
     <button onclick="formService()"><span class="tile">${ico('wrench')}</span>Intervención</button>
     <button onclick="formFault()"><span class="tile">${ico('alert')}</span>Avería</button>
@@ -1480,7 +1481,7 @@ views.componentes = v => {
 views.mas = v => `<h2>Más</h2><p class="sub">Herramientas y configuración</p><div class="mgrid">
   ${[['facturas', 'doc', 'Facturas de taller', 'Importar y completar el plan'], ['vehiculos', 'car', 'Vehículos', 'Fichas, fotos, ITV'], ['km', 'km', 'Kilometraje', 'Lecturas y uso'], ['componentes', 'tire', 'Componentes', 'Desgaste predictivo'], ['gastos', 'euro', 'Gastos', 'Coste y €/km'], ['informes', 'pdf', 'Informes PDF', 'Historial completo'], ['copias', 'cloud', 'Copias', 'Exportar y restaurar'], ['ajustes', 'bell', 'Avisos', 'Notificaciones y umbrales']]
     .map(([h, i, t, s]) => `<a href="#${h}" class="rv"><span class="tile">${ico(i)}</span><div class="t">${t}</div><div class="s">${s}</div></a>`).join('')}</div>
-  <p class="note" style="text-align:center;margin-top:18px;letter-spacing:.2em">GESCAR · V2.3</p>`;
+  <p class="note" style="text-align:center;margin-top:18px;letter-spacing:.2em">GESCAR · V2.4</p>`;
 
 views.vehiculos = () => `<h2>Vehículos</h2><p class="sub">Cada vehículo con su historial independiente</p>${S.vehicles.map(v => `<div class="card vcard rv" onclick="formVehicle(S.vehicles.find(x=>x.id==='${v.id}'))">
   <div class="vimg">${photoLayer(v)}${carSVG(v, {suf: 'v'})}</div>
@@ -1651,7 +1652,7 @@ function normFactura(f) {
     lineas, base: dec(f.base_imponible), ivaPct: dec(f.iva_pct), iva: dec(f.iva_importe), total: dec(f.total), observaciones: f.observaciones || '', averia: f.averia_reparada || '', confianza: f.confianza, dudas: f.dudas || [],
     datosV: f.datos_vehiculo || {}, prox: f.proxima_revision || {},
     nuevas: (f.nuevas_operaciones || []).filter(o => o && o.nombre && !S.plan.some(p => p.vehicleId === vid && p.nombre.toLowerCase() === String(o.nombre).toLowerCase())).map(o => ({...o, on: true})),
-    recs: (f.recomendaciones || []).filter(r => r && r.texto).map(r => ({...r, on: true})), vOn: {}};
+    recs: (f.recomendaciones || []).filter(r => r && r.texto).map(r => ({...r, on: true})), vOn: {}, _idImp: f.id_import || null};
 }
 function checksFactura(F) {
   const w = []; const v = S.vehicles.find(x => x.id === F.vid);
@@ -1726,7 +1727,7 @@ function reviewFactura(F, docs, queue) {
     body.querySelector('#fxSave').onclick = async () => {
       if (F.km == null) { toast('Indica el kilometraje de la factura'); return; }
       if (!F.fecha) { toast('Indica la fecha'); return; }
-      await saveFactura(F, docs); queue && queue.onSaved && queue.onSaved(); s.close(); toast('Factura importada'); queue && queue.next ? queue.next() : (location.hash = '#facturas', render());
+      await saveFactura(F, docs); if (F._idImp) await markImported(F._idImp); queue && queue.onSaved && queue.onSaved(); s.close(); toast('Factura importada'); queue && queue.next ? queue.next() : (location.hash = '#facturas', render());
     };
     const sk = body.querySelector('#fxSkip'); if (sk) sk.onclick = () => { s.close(); queue.next ? queue.next() : render(); };
   };
@@ -1884,6 +1885,24 @@ function gemSetup(after) {
   s.querySelector('#gkSave').onclick = async () => { await setMeta('gemKey', s.querySelector('#gk').value.trim()); await setMeta('gemModel', s.querySelector('#gm').value.trim() || GEM_MODELS[0]); s.close(); toast('Lector IA configurado'); if (after) after(); else render(); };
 }
 
+/* ---------- Facturas preparadas por Claude en el repositorio (importar/pendientes.json) ---------- */
+let PENDING = [];
+async function markImported(id) { const l = new Set(S.meta.importados || []); l.add(id); await setMeta('importados', [...l]); PENDING = PENDING.filter(f => f.id_import !== id); }
+async function checkPending() {
+  if (!location.protocol.startsWith('http')) return;
+  try { const r = await fetch('importar/pendientes.json?t=' + Date.now(), {cache: 'no-store'}); if (!r.ok) return; const j = await r.json();
+    const done = new Set(S.meta.importados || []); PENDING = (j.facturas || []).filter(f => f.id_import && !done.has(f.id_import)); if (PENDING.length) render();
+  } catch (e) {}
+}
+function importPending() { if (!PENDING.length) return; runQueue(PENDING.map(normFactura), []); }
+async function discardPending() { if (!await ask(`¿Descartar ${PENDING.length} factura(s) preparada(s)? No se importarán.`, 'Descartar', true)) return; for (const f of [...PENDING]) await markImported(f.id_import); render(); }
+function pendingBox() {
+  if (!PENDING.length) return '';
+  return `<div class="card rv" style="background:linear-gradient(135deg,rgba(201,169,110,.22),rgba(201,169,110,.05));border-color:rgba(201,169,110,.45)">
+    <div class="row"><span class="tile">${ico('spark')}</span><div class="grow"><div style="font-weight:600">${PENDING.length} factura(s) preparada(s) por Claude</div><div class="note">${PENDING.map(f => esc((f.taller || 'Taller').split('·')[0].trim() + ' · ' + (f.numero || '') + ' · ' + (f.fecha ? fDate(f.fecha) : ''))).join('<br>')}</div></div></div>
+    <div class="grid2" style="margin-top:12px"><button class="btn" onclick="importPending()">${ico('check', 2)} Revisar e importar</button><button class="btn sec" onclick="discardPending()">Descartar</button></div></div>`;
+}
+
 /* ---------- Vista Facturas: importación + estado técnico ---------- */
 views.facturas = v => {
   const fs = of('services', v).filter(s => s.fuente === 'factura').sort((a, b) => b.fecha.localeCompare(a.fecha));
@@ -1894,7 +1913,7 @@ views.facturas = v => {
     .filter(l => ['pieza', 'fluido'].includes(l.tipo) && l.descripcion && !/^iva/i.test(l.descripcion)).forEach(l => subs.push({...l, fecha: s.fecha, km: s.km, taller: s.taller, sid: s.id, sis: l.sistema || (S.plan.find(p => p.id === l.plan_id)?.sistema) || 'Otros'})));
   const bySis = {}; subs.sort((a, b) => b.fecha.localeCompare(a.fecha)).forEach(x => (bySis[x.sis] = bySis[x.sis] || []).push(x));
   const plan = of('plan', v).filter(p => p.activo !== false).map(p => ({p, ld: lastDone(p)}));
-  return `<h2>Facturas de taller</h2><p class="sub">${esc(v.alias)} · importa facturas y GESCAR completa el plan</p>
+  return `<h2>Facturas de taller</h2><p class="sub">${esc(v.alias)} · importa facturas y GESCAR completa el plan</p>${pendingBox()}
   <div class="card rv" style="background:linear-gradient(135deg,rgba(201,169,110,.16),rgba(201,169,110,.03));border-color:rgba(201,169,110,.3)">
     <div class="row"><span class="tile">${ico('doc')}</span><div class="grow"><div style="font-weight:600">Importar factura</div><div class="note">Haz la foto y la IA lee fechas, km, piezas, referencias e importes y ajusta todo el plan.</div></div></div>
     <div class="grid2" style="margin-top:14px">
@@ -1933,7 +1952,8 @@ document.querySelectorAll('#tabs [data-ic]').forEach(i => i.outerHTML = ico(i.da
   render();
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').then(() => checkNotify()).catch(() => checkNotify());
   else checkNotify();
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
+  checkPending();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); checkPending(); } });
 })();
 </script>
 </body>
