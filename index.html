@@ -74,6 +74,9 @@ h3::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,var(--li
 .bar{height:4px;background:rgba(255,255,255,.08);border-radius:4px;overflow:hidden;margin-top:8px}
 .bar i{display:block;height:100%;background:linear-gradient(90deg,#3fae7c,var(--ok));border-radius:4px;transform-origin:left;animation:grow 1.1s var(--ease) both}
 .bar i.warn{background:linear-gradient(90deg,#c9892d,var(--warn))}.bar i.bad{background:linear-gradient(90deg,#c74343,var(--bad))}
+@keyframes spinring{to{transform:rotate(360deg)}}
+.ring .val[style*=spinring]{transform-origin:60px 60px}
+.mini{padding:8px 9px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:14px;width:100%;color-scheme:dark;-webkit-appearance:none;appearance:none}
 @keyframes grow{from{transform:scaleX(0)}}
 .btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:0;border-radius:14px;padding:13px 16px;font-weight:600;letter-spacing:.03em;background:linear-gradient(135deg,var(--gold2),var(--gold));color:#141008;transition:transform .15s}
 .btn:active{transform:scale(.97)}
@@ -1327,8 +1330,8 @@ views.inicio = v => {
   <div class="qa rv">
     <button onclick="formService()"><span class="tile">${ico('wrench')}</span>Intervención</button>
     <button onclick="formFault()"><span class="tile">${ico('alert')}</span>Avería</button>
+    <button onclick="location.hash='#facturas'"><span class="tile">${ico('doc')}</span>Facturas</button>
     <button onclick="formExpense()"><span class="tile">${ico('euro')}</span>Gasto</button>
-    <button onclick="location.hash='#informes'"><span class="tile">${ico('pdf')}</span>Informe</button>
   </div>
   ${warn.map(w => `<div class="warnbox rv">${ico('spark')}<div>${w}</div></div>`).join('')}
   <h3 class="rv">Estado</h3>
@@ -1475,9 +1478,9 @@ views.componentes = v => {
 
 /* ---------- MÁS ---------- */
 views.mas = v => `<h2>Más</h2><p class="sub">Herramientas y configuración</p><div class="mgrid">
-  ${[['vehiculos', 'car', 'Vehículos', 'Fichas, fotos, ITV'], ['km', 'km', 'Kilometraje', 'Lecturas y uso'], ['componentes', 'tire', 'Componentes', 'Desgaste predictivo'], ['gastos', 'euro', 'Gastos', 'Coste y €/km'], ['informes', 'pdf', 'Informes PDF', 'Historial completo'], ['copias', 'cloud', 'Copias', 'Exportar y restaurar'], ['ajustes', 'bell', 'Avisos', 'Notificaciones y umbrales']]
+  ${[['facturas', 'doc', 'Facturas de taller', 'Importar y completar el plan'], ['vehiculos', 'car', 'Vehículos', 'Fichas, fotos, ITV'], ['km', 'km', 'Kilometraje', 'Lecturas y uso'], ['componentes', 'tire', 'Componentes', 'Desgaste predictivo'], ['gastos', 'euro', 'Gastos', 'Coste y €/km'], ['informes', 'pdf', 'Informes PDF', 'Historial completo'], ['copias', 'cloud', 'Copias', 'Exportar y restaurar'], ['ajustes', 'bell', 'Avisos', 'Notificaciones y umbrales']]
     .map(([h, i, t, s]) => `<a href="#${h}" class="rv"><span class="tile">${ico(i)}</span><div class="t">${t}</div><div class="s">${s}</div></a>`).join('')}</div>
-  <p class="note" style="text-align:center;margin-top:18px;letter-spacing:.2em">GESCAR · V2.0</p>`;
+  <p class="note" style="text-align:center;margin-top:18px;letter-spacing:.2em">GESCAR · V2.2</p>`;
 
 views.vehiculos = () => `<h2>Vehículos</h2><p class="sub">Cada vehículo con su historial independiente</p>${S.vehicles.map(v => `<div class="card vcard rv" onclick="formVehicle(S.vehicles.find(x=>x.id==='${v.id}'))">
   <div class="vimg">${photoLayer(v)}${carSVG(v, {suf: 'v'})}</div>
@@ -1497,6 +1500,317 @@ formVehicle = function (v) {
     btn.onclick = async () => { const val = s.querySelector('#f_carroceria').value; await orig(); if (s.isConnected) return; const rec = v ? S.vehicles.find(x => x.id === v.id) : S.vehicles.find(x => x.id === S.meta.vid); if (rec && rec.carroceria !== val) { rec.carroceria = val; await save('vehicles', rec); render(); } };
   }
   return s;
+};
+
+/* ===================== IMPORTADOR DE FACTURAS DE TALLER ===================== */
+/* Reglas profesionales de correspondencia: texto de la línea → operación del plan */
+const PLAN_RULES = [
+  [/filtro\s*(de\s*)?aceite|aceite\s*(de\s*)?motor|cambio\s*(de\s*)?aceite|\b\d{1,2}\s*w\s*-?\s*\d{2}\b|lubricante\s*motor|229\.[35]|b71\s*2290/i, /^aceite motor/i],
+  [/filtro\s*(de\s*)?(gas[oó]il|gas[oó]leo|combustible|diesel|di[eé]sel)/i, /filtro de (combustible|gasoil)/i],
+  [/filtro\s*(de\s*)?(habit|polen|antipolen|cabina|carb[oó]n)/i, /habit[aá]culo/i],
+  [/filtro\s*(de\s*)?aire/i, /^filtro de aire/i],
+  [/l[ií]quido\s*(de\s*)?fren|dot\s*-?\s*4|purga.*fren/i, /l[ií]quido de frenos/i],
+  [/pastilla|disco.*fren|fren.*disco|zapata|mordaza|pinza\s*de\s*freno/i, /pastillas y discos/i],
+  [/refrigerante|anticongelante|coolant|termostato|radiador/i, /refrigerante|anticongelante/i],
+  [/kit\s*(de\s*)?distrib|correa\s*(de\s*)?distrib|bomba\s*(de\s*)?agua|cadena\s*(de\s*)?distrib|tensor\s*(de\s*)?cadena/i, /distribuci[oó]n/i],
+  [/correa\s*(de\s*)?(auxiliar|accesorios|servicio|alternador|poly|multipista|trapecial)|tensor\s*(de\s*)?correa|polea\s*(tensora|loca|amortiguadora)/i, /correa de accesorios/i],
+  [/\batf\b|caja\s*(de\s*cambios\s*)?autom|aceite.*(caja|cambio)|722\.6|filtro.*caja/i, /caja autom/i],
+  [/inyector|arandela|junta.*inyector|retorno/i, /inyectores|arandelas/i],
+  [/rejilla.*turbo|filtro.*turbo|tubo.*engrase/i, /turbo/i],
+  [/eolys|aditivo.*fap|\bfap\b|filtro\s*(de\s*)?part[ií]culas|\bdpf\b/i, /fap/i],
+  [/intercooler|\begr\b|manguito.*(turbo|admisi)/i, /intercooler/i],
+  [/neum[aá]tico|cubierta|rotaci[oó]n|equilibrad|alineaci|convergencia|v[aá]lvula.*rueda/i, /neum[aá]ticos/i],
+  [/bater[ií]a|alternador|regulador.*carga/i, /bater[ií]a/i],
+  [/escobilla|limpiaparabrisas|rasqueta/i, /escobillas/i],
+  [/r[oó]tula|bieleta|silent\s*-?block|brazo\s*(de\s*)?suspensi|trapecio|amortiguador|copela/i, /r[oó]tulas|suspensi/i],
+  [/bajos|antioxid|corrosi/i, /bajos|corrosi/i],
+];
+function matchPlan(text, vid) {
+  const plan = S.plan.filter(p => p.vehicleId === vid);
+  for (const [re, target] of PLAN_RULES) if (re.test(text)) { const p = plan.find(x => target.test(x.nombre)); if (p) return p.id; }
+  return null;
+}
+function matchComps(text, vid) {
+  const comps = S.components.filter(c => c.vehicleId === vid && c.activo !== false); const t = text.toLowerCase(); const out = [];
+  const pos = n => { const d = /delan/.test(n), tr = /tras/.test(n), iz = /izq/.test(n), de = /der|dcho|dcha/.test(n); return {d, tr, iz, de}; };
+  if (/neum[aá]tico|cubierta/.test(t)) {
+    const p = pos(t); const qty = (t.match(/\b([24])\s*(x|uds?|unidades|neum)/) || [])[1];
+    comps.filter(c => /neum/i.test(c.nombre)).forEach(c => { const n = c.nombre.toLowerCase(); const cp = pos(n);
+      const axisOK = (!p.d && !p.tr) ? (qty === '4' || !qty) : ((p.d && cp.d) || (p.tr && cp.tr));
+      const sideOK = (!p.iz && !p.de) || (p.iz && cp.iz) || (p.de && cp.de);
+      if (axisOK && sideOK) out.push(c.id); });
+  }
+  if (/pastilla/.test(t)) comps.filter(c => /pastilla/i.test(c.nombre) && (/tras/.test(t) ? /tras/i.test(c.nombre) : /delan/i.test(c.nombre))).forEach(c => out.push(c.id));
+  if (/bater[ií]a/.test(t) && /(sustit|cambi|nueva|suministro|\bud\b|bater[ií]a\s+\d)/.test(t) && !/revis|comprob|carga\b/.test(t)) comps.filter(c => /bater/i.test(c.nombre)).forEach(c => out.push(c.id));
+  return [...new Set(out)];
+}
+const LTIPOS = [['pieza', 'Pieza'], ['fluido', 'Fluido / aceite'], ['mano_obra', 'Mano de obra'], ['servicio', 'Servicio'], ['tasa', 'Tasa / residuos'], ['descuento', 'Descuento'], ['otro', 'Otro']];
+const ACCIONES = [['sustitucion', 'Sustitución'], ['reparacion', 'Reparación'], ['revision', 'Revisión'], ['ajuste', 'Ajuste'], ['limpieza', 'Limpieza'], ['recarga', 'Recarga / relleno'], ['diagnosis', 'Diagnosis'], ['otro', 'Otro']];
+
+/* ---------- Lector IA (Gemini, capa gratuita de Google AI Studio) ---------- */
+const GEM_MODELS = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash'];
+function promptFactura(vehs) {
+  return `Eres un jefe de taller y administrativo de posventa de automoción con 25 años de experiencia. Analiza la(s) imagen(es)/PDF adjunto(s): contienen UNA O VARIAS facturas, presupuestos u órdenes de reparación de un taller. Transcribe y clasifica DATO A DATO, de forma exhaustiva y fiel. No inventes nada: si un dato no se lee, pon null. Respeta importes con decimales exactos (coma decimal española → número con punto).
+
+Vehículos del usuario (elige el que corresponda por matrícula, bastidor o modelo):
+${JSON.stringify(vehs)}
+
+Para CADA línea de la factura indica:
+- descripcion (texto literal), referencia (código de pieza si aparece), cantidad, precio_unitario (sin IVA), descuento_pct, importe (sin IVA, tras descuento)
+- tipo: pieza | fluido | mano_obra | servicio | tasa | descuento | otro
+- accion: sustitucion | reparacion | revision | ajuste | limpieza | recarga | diagnosis | otro
+- sistema: Motor, Transmisión, Frenos, Suspensión, Dirección, Refrigeración, Climatización, Electricidad, Neumáticos, Escape, Carrocería, Otros
+- plan_id: id de la operación del plan del vehículo que queda REALIZADA con esta línea (o null). Un filtro de aceite y el aceite de motor corresponden a la misma operación. Una mano de obra genérica asígnala a la operación principal si es evidente.
+- componente_ids: ids de componentes controlados que se SUSTITUYEN con esta línea (neumáticos por posición, pastillas por eje, batería), o [].
+
+Devuelve SOLO JSON con esta forma:
+{"facturas":[{"vehiculo_id":"...","matricula":"...","bastidor":null,"taller":"...","nif_taller":null,"direccion_taller":null,"telefono_taller":null,"numero":"...","fecha":"AAAA-MM-DD","km":12345,"tipo_mantenimiento":"preventivo|correctivo|predictivo","titulo":"resumen corto de los trabajos","lineas":[{...}],"base_imponible":0,"iva_pct":21,"iva_importe":0,"total":0,"forma_pago":null,"observaciones":"textos del taller, avisos, recomendaciones y próximas revisiones indicadas","averia_reparada":"si es correctivo: síntoma/avería que se repara, si no null","confianza":0.0,"dudas":["datos ilegibles o dudosos"]}]}`;
+}
+const fileToB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(f); });
+async function prepImage(file, max = 2200) {
+  const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = URL.createObjectURL(file); });
+  const k = Math.min(1, max / Math.max(img.width, img.height)); const c = document.createElement('canvas');
+  c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.88)); return blob;
+}
+async function gemini(parts, onTry) {
+  const key = S.meta.gemKey; if (!key) throw new Error('NOKEY');
+  const models = [S.meta.gemModel, ...GEM_MODELS].filter((m, i, a) => m && a.indexOf(m) === i);
+  let last;
+  for (const m of models) {
+    onTry && onTry(m);
+    let r;
+    try {
+      r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {method: 'POST', headers: {'Content-Type': 'application/json', 'x-goog-api-key': key}, body: JSON.stringify({contents: [{role: 'user', parts}], generationConfig: {responseMimeType: 'application/json'}})});
+    } catch (e) { throw new Error('Sin conexión con Google. Comprueba Internet.'); }
+    if (r.ok) {
+      const j = await r.json(); const txt = (j.candidates?.[0]?.content?.parts || []).map(p => p.text || '').join('').replace(/^```json\s*|```\s*$/g, '').trim();
+      if (!txt) throw new Error('La IA no devolvió datos (' + (j.candidates?.[0]?.finishReason || j.promptFeedback?.blockReason || 'vacío') + ').');
+      if (S.meta.gemModel !== m) await setMeta('gemModel', m);
+      return JSON.parse(txt);
+    }
+    const body = await r.text(); last = `${r.status}: ${body.slice(0, 200)}`;
+    if (r.status === 404 || (r.status === 400 && /model/i.test(body) && !/API key/i.test(body))) continue;
+    if (r.status === 400 && /API key|API_KEY/i.test(body)) throw new Error('La clave de API no es válida.');
+    if (r.status === 429) throw new Error('Has superado el límite gratuito de Gemini por ahora. Espera un minuto (o hasta mañana) y vuelve a intentarlo.');
+    if (r.status === 403) throw new Error('La clave no tiene permiso para la API de Gemini (403).');
+    throw new Error('Error de Gemini ' + last);
+  }
+  throw new Error('Ningún modelo de Gemini disponible. ' + (last || ''));
+}
+
+/* ---------- Normalización y revisión ---------- */
+function normFactura(f) {
+  const vname = String(f.vehiculo || f.modelo || '').toLowerCase();
+  const vid = S.vehicles.find(v => v.id === f.vehiculo_id)?.id
+    || S.vehicles.find(v => v.matricula && f.matricula && v.matricula.replace(/\W/g, '').toUpperCase() === String(f.matricula).replace(/\W/g, '').toUpperCase())?.id
+    || (vname && S.vehicles.find(v => vname.includes('clk') ? /clk/i.test(v.modelo + v.alias) : vname.includes('picasso') ? /picasso/i.test(v.modelo + v.alias) : (v.alias + ' ' + v.modelo).toLowerCase().includes(vname))?.id)
+    || curV().id;
+  const lineas = (f.lineas || []).map(l => {
+    const txt = [l.descripcion, l.referencia].filter(Boolean).join(' ');
+    let pid = l.plan_id && S.plan.some(p => p.id === l.plan_id && p.vehicleId === vid) ? l.plan_id : null;
+    if (!pid && l.operacion_plan) { const on = String(l.operacion_plan).toLowerCase(); pid = S.plan.find(p => p.vehicleId === vid && (p.nombre.toLowerCase() === on || p.nombre.toLowerCase().includes(on) || on.includes(p.nombre.toLowerCase())))?.id || matchPlan(l.operacion_plan, vid); }
+    if (!pid && Array.isArray(l.componentes)) l.componente_ids = S.components.filter(c => c.vehicleId === vid && l.componentes.some(n => c.nombre.toLowerCase() === String(n).toLowerCase())).map(c => c.id);
+    if (!pid && !['mano_obra', 'tasa', 'descuento'].includes(l.tipo)) pid = matchPlan(txt, vid);
+    let comps = (l.componente_ids || []).filter(id => S.components.some(c => c.id === id && c.vehicleId === vid));
+    if (!comps.length && ['pieza', 'otro', undefined, null].includes(l.tipo) && (l.accion || 'sustitucion') === 'sustitucion') comps = matchComps(txt, vid);
+    const cant = dec(l.cantidad) ?? 1; const imp = dec(l.importe) ?? ((dec(l.precio_unitario) || 0) * cant * (1 - (dec(l.descuento_pct) || 0) / 100));
+    return {descripcion: l.descripcion || '', referencia: l.referencia || '', cantidad: cant, precio_unitario: dec(l.precio_unitario), descuento_pct: dec(l.descuento_pct), importe: Math.round(imp * 100) / 100,
+      tipo: l.tipo || 'pieza', accion: l.accion || (l.tipo === 'mano_obra' ? 'otro' : 'sustitucion'), sistema: l.sistema || '', plan_id: pid, componente_ids: comps};
+  });
+  return {vid, matricula: f.matricula || '', taller: f.taller || '', nif: f.nif_taller || '', direccion: f.direccion_taller || '', telefono: f.telefono_taller || '', numero: f.numero || '', fecha: f.fecha || todayISO(), km: num(f.km),
+    tipo: ['preventivo', 'correctivo', 'predictivo'].includes(f.tipo_mantenimiento) ? f.tipo_mantenimiento : 'preventivo', titulo: f.titulo || 'Factura ' + (f.numero || ''),
+    lineas, base: dec(f.base_imponible), ivaPct: dec(f.iva_pct), iva: dec(f.iva_importe), total: dec(f.total), observaciones: f.observaciones || '', averia: f.averia_reparada || '', confianza: f.confianza, dudas: f.dudas || []};
+}
+function checksFactura(F) {
+  const w = []; const v = S.vehicles.find(x => x.id === F.vid);
+  const suma = F.lineas.reduce((a, l) => a + (l.importe || 0), 0);
+  if (F.base != null && Math.abs(suma - F.base) > 0.06) w.push(`La suma de líneas (${fEur(suma)}) no coincide con la base imponible (${fEur(F.base)}). Revisa importes o descuentos.`);
+  if (F.base != null && F.iva != null && F.total != null && Math.abs(F.base + F.iva - F.total) > 0.06) w.push(`Base + IVA (${fEur(F.base + F.iva)}) ≠ total (${fEur(F.total)}).`);
+  if (F.matricula && v?.matricula && F.matricula.replace(/\W/g, '').toUpperCase() !== v.matricula.replace(/\W/g, '').toUpperCase()) w.push(`La matrícula de la factura (${F.matricula}) no coincide con la de ${v.alias} (${v.matricula}).`);
+  if (F.km == null) w.push('La factura no indica kilometraje: introdúcelo para que el plan calcule bien los próximos vencimientos.');
+  else { const prev = kmPoints(v).filter(p => p.fecha <= F.fecha); const mx = prev.length ? Math.max(...prev.map(p => p.km)) : null; if (mx != null && F.km < mx - 50) w.push(`El km (${fKm(F.km)}) es menor que una lectura anterior a esa fecha (${fKm(mx)}).`); }
+  if (F.numero && S.services.some(s => s.vehicleId === F.vid && s.factura?.numero && s.factura.numero === F.numero && (s.factura.taller || '') === F.taller)) w.push(`La factura nº ${F.numero} de ${F.taller} ya está importada (posible duplicado).`);
+  if (F.fecha > todayISO()) w.push('La fecha de la factura es posterior a hoy.');
+  (F.dudas || []).forEach(d => w.push('Dato dudoso: ' + d));
+  return w;
+}
+function reviewFactura(F, docs, queue) {
+  const vOpts = S.vehicles.map(v => [v.id, v.alias + (v.matricula ? ' · ' + v.matricula : '')]);
+  const draw = () => {
+    const plan = S.plan.filter(p => p.vehicleId === F.vid && p.activo !== false);
+    const comps = S.components.filter(c => c.vehicleId === F.vid && c.activo !== false);
+    const warns = checksFactura(F);
+    const ops = [...new Set(F.lineas.map(l => l.plan_id).filter(Boolean))];
+    const cps = [...new Set(F.lineas.flatMap(l => l.componente_ids || []))];
+    return `${queue ? `<p class="note" style="margin-top:0">Factura ${queue.i + 1} de ${queue.n}</p>` : ''}
+    ${F.confianza != null ? `<div class="row" style="margin-bottom:10px"><span class="eyebrow">Fiabilidad de lectura</span><div class="grow bar" style="margin:0"><i class="${F.confianza >= .85 ? 'ok' : F.confianza >= .6 ? 'warn' : 'bad'}" style="width:${Math.round(F.confianza * 100)}%"></i></div><b>${Math.round(F.confianza * 100)}%</b></div>` : ''}
+    ${warns.map(x => `<div class="warnbox">${ico('alert')}<div>${esc(x)}</div></div>`).join('')}
+    <div class="fld"><label>Vehículo</label><select data-h="vid">${vOpts.map(([k, l]) => `<option value="${k}" ${k === F.vid ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>
+    <div class="f2"><div class="fld"><label>Fecha</label><input type="date" data-h="fecha" value="${esc(F.fecha)}"></div><div class="fld"><label>Kilometraje</label><input data-h="km" inputmode="numeric" value="${F.km ?? ''}" placeholder="Obligatorio"></div></div>
+    <div class="f2"><div class="fld"><label>Taller</label><input data-h="taller" value="${esc(F.taller)}"></div><div class="fld"><label>Nº factura</label><input data-h="numero" value="${esc(F.numero)}"></div></div>
+    <div class="f2"><div class="fld"><label>Tipo</label><select data-h="tipo">${[['preventivo', 'Preventivo'], ['correctivo', 'Correctivo'], ['predictivo', 'Predictivo']].map(([k, l]) => `<option value="${k}" ${k === F.tipo ? 'selected' : ''}>${l}</option>`).join('')}</select></div><div class="fld"><label>Matrícula en factura</label><input data-h="matricula" value="${esc(F.matricula)}"></div></div>
+    <div class="fld"><label>Resumen de los trabajos</label><input data-h="titulo" value="${esc(F.titulo)}"></div>
+    <h3>Líneas de la factura (${F.lineas.length})</h3>
+    ${F.lineas.map((l, i) => `<div class="card" style="padding:12px" data-li="${i}">
+      <div class="row" style="align-items:flex-start"><span class="tile ${l.plan_id ? 'ok' : ''}" style="width:36px;height:36px;border-radius:11px">${ico(l.tipo === 'mano_obra' ? 'wrench' : iconFor(l.descripcion, l.sistema))}</span>
+      <div class="grow"><input data-l="descripcion" value="${esc(l.descripcion)}" style="width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);padding:4px 0;font-weight:550;font-size:14.5px">
+      <div class="f2" style="grid-template-columns:1.3fr .6fr .9fr;gap:6px;margin-top:8px">
+        <input data-l="referencia" placeholder="Referencia" value="${esc(l.referencia)}" class="mini"><input data-l="cantidad" inputmode="decimal" value="${l.cantidad ?? 1}" class="mini" title="Cantidad"><input data-l="importe" inputmode="decimal" value="${l.importe ?? ''}" class="mini" title="Importe sin IVA"></div>
+      <div class="f2" style="gap:6px;margin-top:6px"><select data-l="tipo" class="mini">${LTIPOS.map(([k, t]) => `<option value="${k}" ${k === l.tipo ? 'selected' : ''}>${t}</option>`).join('')}</select><select data-l="accion" class="mini">${ACCIONES.map(([k, t]) => `<option value="${k}" ${k === l.accion ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+      <select data-l="plan_id" class="mini" style="margin-top:6px;width:100%;${l.plan_id ? 'border-color:rgba(95,211,154,.5)' : ''}"><option value="">— Sin operación del plan (solo historial) —</option>${plan.map(p => `<option value="${p.id}" ${p.id === l.plan_id ? 'selected' : ''}>✓ ${esc(p.nombre)}</option>`).join('')}</select>
+      ${comps.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${comps.map(c => `<label class="pill ${(l.componente_ids || []).includes(c.id) ? 'info' : 'grey'}" style="cursor:pointer;text-transform:none;letter-spacing:0;font-weight:500;font-size:11px"><input type="checkbox" data-c="${c.id}" ${(l.componente_ids || []).includes(c.id) ? 'checked' : ''} style="display:none">${esc(c.nombre.replace('Neumático ', 'Neum. ').replace('Pastillas de freno ', 'Pastillas '))}</label>`).join('')}</div>` : ''}
+      </div><button class="btn sec sm" data-del="${i}" aria-label="Quitar línea" style="padding:6px 9px">✕</button></div></div>`).join('')}
+    <button class="btn sec sm" id="fxAdd">${ico('plus')} Añadir línea</button>
+    <h3>Importes</h3>
+    <div class="f2" style="grid-template-columns:1fr 1fr 1fr"><div class="fld"><label>Base</label><input data-h="base" inputmode="decimal" value="${F.base ?? ''}"></div><div class="fld"><label>IVA €</label><input data-h="iva" inputmode="decimal" value="${F.iva ?? ''}"></div><div class="fld"><label>Total pagado</label><input data-h="total" inputmode="decimal" value="${F.total ?? ''}"></div></div>
+    <div class="fld"><label>Observaciones y recomendaciones del taller</label><textarea data-h="observaciones">${esc(F.observaciones)}</textarea></div>
+    ${F.tipo === 'correctivo' ? `<div class="fld"><label>Avería reparada</label><input data-h="averia" value="${esc(F.averia)}" placeholder="Se registrará como avería resuelta"></div>` : ''}
+    <div class="card" style="background:rgba(95,211,154,.06);border-color:rgba(95,211,154,.25)"><div class="eyebrow" style="color:var(--ok)">Al guardar se actualizará</div>
+      <div style="margin-top:8px;font-size:13.5px">${ops.length ? ops.map(id => `✓ ${esc(S.plan.find(p => p.id === id)?.nombre || '')}`).join('<br>') : 'Ninguna operación del plan'}${cps.length ? '<br><br>' + cps.map(id => `↺ ${esc(S.components.find(c => c.id === id)?.nombre || '')} (desgaste a 0%)`).join('<br>') : ''}
+      <br><br>Historial y gastos: ${fEur(F.total ?? F.lineas.reduce((a, l) => a + l.importe, 0))}${docs.length ? ` · ${docs.length} documento(s) adjunto(s)` : ''}</div></div>
+    <button class="btn block" id="fxSave" style="margin-top:6px">${ico('check', 2)} Guardar factura</button>
+    ${queue && queue.n > 1 ? `<button class="btn sec block" id="fxSkip" style="margin-top:8px">Saltar esta factura</button>` : ''}`;
+  };
+  const s = sheet({title: 'Revisar factura', body: '<div id="fxBody"></div>'});
+  const body = s.querySelector('#fxBody');
+  const rerender = () => { const y = s.querySelector('.sheet-b').scrollTop; body.innerHTML = draw(); bind(); s.querySelector('.sheet-b').scrollTop = y; };
+  const bind = () => {
+    body.querySelectorAll('[data-h]').forEach(el => el.onchange = () => { const k = el.dataset.h; let val = el.value.trim();
+      if (k === 'km') val = num(val); else if (['base', 'iva', 'total'].includes(k)) val = dec(val);
+      if (k === 'vid' && val !== F.vid) { F.vid = val; F.lineas.forEach(l => { l.plan_id = matchPlan(l.descripcion + ' ' + l.referencia, val); l.componente_ids = matchComps(l.descripcion, val); }); }
+      F[k] = val; rerender(); });
+    body.querySelectorAll('[data-li]').forEach(card => { const l = F.lineas[+card.dataset.li];
+      card.querySelectorAll('[data-l]').forEach(el => el.onchange = () => { const k = el.dataset.l; l[k] = ['cantidad', 'importe'].includes(k) ? dec(el.value) : (el.value || (k === 'plan_id' ? null : '')); if (['plan_id', 'importe', 'tipo'].includes(k)) rerender(); });
+      card.querySelectorAll('[data-c]').forEach(el => el.onchange = () => { const id = el.dataset.c; l.componente_ids = el.checked ? [...new Set([...(l.componente_ids || []), id])] : (l.componente_ids || []).filter(x => x !== id); rerender(); }); });
+    body.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { F.lineas.splice(+b.dataset.del, 1); rerender(); });
+    body.querySelector('#fxAdd').onclick = () => { F.lineas.push({descripcion: '', referencia: '', cantidad: 1, importe: 0, tipo: 'pieza', accion: 'sustitucion', plan_id: null, componente_ids: []}); rerender(); };
+    body.querySelector('#fxSave').onclick = async () => {
+      if (F.km == null) { toast('Indica el kilometraje de la factura'); return; }
+      if (!F.fecha) { toast('Indica la fecha'); return; }
+      await saveFactura(F, docs); s.close(); toast('Factura importada'); queue && queue.next ? queue.next() : (location.hash = '#facturas', render());
+    };
+    const sk = body.querySelector('#fxSkip'); if (sk) sk.onclick = () => { s.close(); queue.next ? queue.next() : render(); };
+  };
+  body.innerHTML = draw(); bind();
+}
+async function saveFactura(F, docs) {
+  const tot = F.total ?? null; const base = F.base ?? F.lineas.reduce((a, l) => a + (l.importe || 0), 0);
+  const ivaImp = F.iva ?? (tot != null ? Math.round((tot - base) * 100) / 100 : 0);
+  const mo = F.lineas.filter(l => l.tipo === 'mano_obra').reduce((a, l) => a + (l.importe || 0), 0);
+  const lineas = F.lineas.filter(l => l.tipo !== 'mano_obra').map(l => ({nombre: l.descripcion, ref: l.referencia, cant: l.cantidad || 1, precio: Math.round((l.importe || 0) / (l.cantidad || 1) * 10000) / 10000, compId: (l.componente_ids || [])[0] || ''}));
+  if (ivaImp) lineas.push({nombre: `IVA${F.ivaPct ? ' ' + F.ivaPct + ' %' : ''}`, ref: '', cant: 1, precio: ivaImp});
+  const rec = {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, tipo: F.tipo, titulo: F.titulo, taller: F.taller,
+    planIds: [...new Set(F.lineas.map(l => l.plan_id).filter(Boolean))], lineas, manoObra: Math.round(mo * 100) / 100,
+    notas: F.observaciones, fotos: docs.filter(d => d.img).map(d => d.id), docs: docs.map(d => ({id: d.id, tipo: d.type, nombre: d.name})),
+    fuente: 'factura', factura: {numero: F.numero, taller: F.taller, nif: F.nif, direccion: F.direccion, telefono: F.telefono, base, ivaPct: F.ivaPct, iva: ivaImp, total: tot ?? base + ivaImp, matricula: F.matricula, lineas: F.lineas}};
+  await save('services', rec);
+  // Componentes sustituidos: se reinicia su desgaste
+  for (const id of new Set(F.lineas.flatMap(l => l.componente_ids || []))) {
+    const c = S.components.find(x => x.id === id); if (!c) continue;
+    if (!c.fechaMontaje || F.fecha >= c.fechaMontaje) { const l = F.lineas.find(x => (x.componente_ids || []).includes(id)); c.fechaMontaje = F.fecha; c.kmMontaje = F.km; c.lecturas = []; if (l?.referencia || l?.descripcion) c.ref = [l.descripcion, l.referencia].filter(Boolean).join(' · ').slice(0, 120); await save('components', c); }
+  }
+  // Avería reparada
+  if (F.tipo === 'correctivo' && F.averia) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: F.averia, gravedad: 'media', estado: 'resuelta', diagnostico: '', solucion: F.titulo, serviceId: rec.id, fotos: []});
+  // Datos de la ficha si faltaban
+  const v = S.vehicles.find(x => x.id === F.vid);
+  if (v && !v.matricula && F.matricula) { v.matricula = F.matricula; await save('vehicles', v); }
+  if (v && v.kmInicial == null) { v.kmInicial = F.km; v.fechaCompra = v.fechaCompra || F.fecha; await save('vehicles', v); }
+}
+async function saveDoc(file) {
+  if (/^image\//.test(file.type)) return {id: await putPhoto(file), type: file.type, name: file.name, img: true};
+  const id = 'doc_' + uid(); if (DB.mem) memPhotos[id] = file; else await DB.put('photos', {id, blob: file, name: file.name}); return {id, type: file.type, name: file.name};
+}
+async function openDoc(id) { const u = await photoURL(id); if (u) window.open(u, '_blank'); }
+
+/* ---------- Flujo de importación ---------- */
+async function importInvoices(files) {
+  if (!files || !files.length) return;
+  if (!S.meta.gemKey) { gemSetup(() => importInvoices(files)); return; }
+  files = [...files];
+  const s = sheet({title: 'Analizando factura', body: `<div style="text-align:center;padding:10px 0 4px">${ringHTML(0, 96)}<p id="fxSt" style="margin:14px 0 4px">Preparando ${files.length} archivo(s)…</p><p class="note" id="fxSt2">Lectura dato a dato: taller, fecha, km, líneas, referencias, importes e IVA</p></div><div class="bar"><i id="fxBar" style="width:5%;animation:none;transition:width .6s"></i></div>`});
+  const st = t => s.querySelector('#fxSt').textContent = t, bar = p => s.querySelector('#fxBar').style.width = p + '%';
+  s.querySelector('.ring .c b').innerHTML = ico('doc'); s.querySelector('.ring .c b').style.cssText = 'width:34px;height:34px;color:var(--gold)';
+  const ring = s.querySelector('.ring .val'); ring.style.transition = 'none'; ring.style.animation = 'spinring 1.4s linear infinite'; ring.style.strokeDashoffset = 2 * Math.PI * 52 * .7;
+  try {
+    const parts = [{text: promptFactura(S.vehicles.map(v => ({id: v.id, nombre: v.alias, modelo: v.modelo, motor: v.motor, matricula: v.matricula || null, bastidor: v.vin || null,
+      plan: S.plan.filter(p => p.vehicleId === v.id && p.activo !== false).map(p => ({id: p.id, operacion: p.nombre})),
+      componentes: S.components.filter(c => c.vehicleId === v.id && c.activo !== false).map(c => ({id: c.id, nombre: c.nombre}))}))) }];
+    const docs = [];
+    for (const [i, f] of files.entries()) {
+      st(`Procesando ${f.name || 'archivo ' + (i + 1)}…`); bar(5 + 25 * (i + 1) / files.length);
+      if (/^image\//.test(f.type) || /\.(jpe?g|png|heic|webp)$/i.test(f.name)) { const b = await prepImage(f); parts.push({inline_data: {mime_type: 'image/jpeg', data: await fileToB64(b)}}); }
+      else if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) { if (f.size > 18e6) throw new Error('El PDF supera 18 MB.'); parts.push({inline_data: {mime_type: 'application/pdf', data: await fileToB64(f)}}); }
+      else continue;
+      docs.push(await saveDoc(f));
+    }
+    if (parts.length < 2) throw new Error('Formato no admitido. Usa fotos (JPG/PNG/HEIC) o PDF.');
+    st('Leyendo la factura con IA…'); bar(55);
+    const out = await gemini(parts, m => s.querySelector('#fxSt2').textContent = 'Modelo: ' + m);
+    bar(100);
+    const list = (out.facturas || (Array.isArray(out) ? out : [out])).filter(Boolean);
+    if (!list.length) throw new Error('No se ha encontrado ninguna factura en el documento.');
+    s.close();
+    runQueue(list.map(normFactura), docs);
+  } catch (e) {
+    console.error(e);
+    s.querySelector('.sheet-b').innerHTML = `<div class="warnbox">${ico('alert')}<div>${esc(e.message === 'NOKEY' ? 'Falta la clave de Gemini.' : e.message)}</div></div><button class="btn sec block" onclick="this.closest('.sheet-bg').remove();gemSetup()">Configurar lector IA</button>`;
+  }
+}
+function runQueue(list, docs) {
+  let i = 0; const next = () => { if (i >= list.length) { location.hash = '#facturas'; render(); return; } const F = list[i]; reviewFactura(F, i === 0 ? docs : [], {i, n: list.length, next: () => { i++; next(); }}); };
+  next();
+}
+async function importInvoiceJSON(file) {
+  let j; try { j = JSON.parse(await file.text()); } catch (e) { toast('Archivo no válido'); return; }
+  const list = j.facturas || (Array.isArray(j) ? j : null); if (!list) { toast('No contiene facturas'); return; }
+  runQueue(list.map(normFactura), []);
+}
+function gemSetup(after) {
+  const s = sheet({title: 'Lector IA de facturas', body: `
+    <p style="margin-top:0">GESCAR usa <b>Google Gemini</b> (capa gratuita de Google AI Studio) para leer fotos y PDF de facturas. Solo necesitas una clave gratuita:</p>
+    <ol class="note" style="font-size:13px;padding-left:18px;line-height:1.6"><li>Entra en <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google.</li><li>Pulsa <b>Create API key</b> y cópiala.</li><li>Pégala aquí abajo.</li></ol>
+    <div class="fld"><label>Clave de API de Gemini</label><input id="gk" value="${esc(S.meta.gemKey || '')}" placeholder="AIza…" autocomplete="off" autocapitalize="off" spellcheck="false"></div>
+    <div class="fld"><label>Modelo (avanzado)</label><input id="gm" value="${esc(S.meta.gemModel || GEM_MODELS[0])}" autocapitalize="off" spellcheck="false"></div>
+    <button class="btn block" id="gkSave">Guardar</button>
+    <p class="note" style="margin-top:12px">La clave se guarda solo en este iPhone. En la capa gratuita, Google puede usar el contenido enviado para mejorar sus productos: las facturas de taller no suelen tener datos delicados, pero tenlo en cuenta.</p>`});
+  s.querySelector('#gkSave').onclick = async () => { await setMeta('gemKey', s.querySelector('#gk').value.trim()); await setMeta('gemModel', s.querySelector('#gm').value.trim() || GEM_MODELS[0]); s.close(); toast('Lector IA configurado'); if (after) after(); else render(); };
+}
+
+/* ---------- Vista Facturas: importación + estado técnico ---------- */
+views.facturas = v => {
+  const fs = of('services', v).filter(s => s.fuente === 'factura').sort((a, b) => b.fecha.localeCompare(a.fecha));
+  const tot = fs.reduce((a, s) => a + svcCost(s), 0);
+  // Qué se ha sustituido hasta la fecha (todas las intervenciones del vehículo)
+  const subs = [];
+  of('services', v).forEach(s => (s.factura?.lineas || s.lineas.map(l => ({descripcion: l.nombre, referencia: l.ref, cantidad: l.cant, importe: (l.cant || 1) * (l.precio || 0), tipo: /iva/i.test(l.nombre) ? 'tasa' : 'pieza', accion: 'sustitucion'})))
+    .filter(l => ['pieza', 'fluido'].includes(l.tipo) && l.descripcion && !/^iva/i.test(l.descripcion)).forEach(l => subs.push({...l, fecha: s.fecha, km: s.km, taller: s.taller, sid: s.id, sis: l.sistema || (S.plan.find(p => p.id === l.plan_id)?.sistema) || 'Otros'})));
+  const bySis = {}; subs.sort((a, b) => b.fecha.localeCompare(a.fecha)).forEach(x => (bySis[x.sis] = bySis[x.sis] || []).push(x));
+  const plan = of('plan', v).filter(p => p.activo !== false).map(p => ({p, ld: lastDone(p)}));
+  return `<h2>Facturas de taller</h2><p class="sub">${esc(v.alias)} · importa facturas y GESCAR completa el plan</p>
+  <div class="card rv" style="background:linear-gradient(135deg,rgba(201,169,110,.16),rgba(201,169,110,.03));border-color:rgba(201,169,110,.3)">
+    <div class="row"><span class="tile">${ico('doc')}</span><div class="grow"><div style="font-weight:600">Importar factura</div><div class="note">Foto o PDF. Varias páginas de una misma factura: selecciónalas juntas.</div></div></div>
+    <div class="grid2" style="margin-top:14px">
+      <label class="btn">${ico('cam')} Foto<input type="file" accept="image/*" multiple hidden onchange="importInvoices(this.files);this.value=''"></label>
+      <label class="btn sec">${ico('pdf')} PDF / archivo<input type="file" accept="application/pdf,image/*" multiple hidden onchange="importInvoices(this.files);this.value=''"></label>
+    </div>
+    <div class="row" style="margin-top:12px;justify-content:space-between"><a href="#" class="note" onclick="gemSetup();return false">${S.meta.gemKey ? '✓ Lector IA configurado' : '⚙︎ Configurar lector IA (gratis)'}</a>
+      <label class="note" style="cursor:pointer;text-decoration:underline">Importar .json<input type="file" accept="application/json,.json" hidden onchange="importInvoiceJSON(this.files[0]);this.value=''"></label></div>
+  </div>
+  <div class="grid2 rv" style="grid-template-columns:repeat(3,1fr);margin-bottom:4px">
+    <div class="kpi"><div class="n" data-count="${fs.length}">0</div><div class="l">Facturas</div></div>
+    <div class="kpi"><div class="n" data-count="${subs.length}">0</div><div class="l">Sustituciones</div></div>
+    <div class="kpi"><div class="n" style="font-size:19px">${fEur(tot).replace(/,\d\d/, '')}</div><div class="l">Pagado</div></div></div>
+  <h3>Estado del plan según facturas</h3>
+  <div class="card rv">${plan.map(({p, ld}) => { const st = planStatus(p); const svc = ld?.svcId ? S.services.find(s => s.id === ld.svcId) : null;
+    return `<div class="item" onclick="formPlan(S.plan.find(x=>x.id==='${p.id}'))"><span class="tile ${st.status}" style="width:36px;height:36px;border-radius:11px">${ico(iconFor(p.nombre, p.sistema))}</span><div class="grow"><div class="t" style="font-size:14px">${esc(p.nombre)}</div><div class="s">${ld ? `${fDate(ld.fecha)} · ${fKm(ld.km)}${svc?.factura ? ' · fact. ' + esc(svc.factura.numero || '') + ' ' + esc(svc.taller || '') : ld.base ? ' · dato inicial' : ''}` : '<span style="color:var(--warn)">Sin constancia en facturas</span>'}</div></div><span class="pill ${st.status}">${STATUS[st.status]}</span></div>`; }).join('')}</div>
+  <h3>Qué se ha sustituido hasta la fecha</h3>
+  ${Object.keys(bySis).length ? Object.entries(bySis).map(([sis, xs]) => `<div class="card rv"><div class="row" style="margin-bottom:4px"><span class="tile" style="width:32px;height:32px;border-radius:10px">${ico(iconFor('', sis))}</span><div class="grow eyebrow" style="color:var(--gold)">${esc(sis)}</div><span class="note">${xs.length}</span></div>
+    ${xs.map(x => `<div class="item" onclick="formService(S.services.find(s=>s.id==='${x.sid}'))"><div class="grow"><div class="t" style="font-size:13.5px">${esc(x.descripcion)}</div><div class="s">${fDate(x.fecha)} · ${fKm(x.km)}${x.referencia ? ' · ref. ' + esc(x.referencia) : ''}${x.taller ? ' · ' + esc(x.taller) : ''}</div></div><div class="r">${x.cantidad && x.cantidad !== 1 ? x.cantidad + ' × ' : ''}${fEur(x.importe)}</div></div>`).join('')}</div>`).join('') : '<div class="card empty">Aún no hay piezas registradas</div>'}
+  <h3>Facturas importadas</h3>
+  <div class="card rv">${fs.length ? fs.map(s => `<div class="item"><span class="tile" style="width:36px;height:36px;border-radius:11px">${ico('doc')}</span><div class="grow" onclick="formService(S.services.find(x=>x.id==='${s.id}'))"><div class="t" style="font-size:14px">${esc(s.taller || 'Taller')} · nº ${esc(s.factura?.numero || '—')}</div><div class="s">${fDate(s.fecha)} · ${fKm(s.km)} · ${(s.factura?.lineas || []).length} líneas · ${s.planIds.length} op. del plan</div></div>
+    <div class="r"><b>${fEur(svcCost(s))}</b>${(s.docs || []).length ? `<br><a href="#" onclick="openDoc('${s.docs[0].id}');return false" class="note">Ver original</a>` : ''}</div></div>`).join('') : '<div class="empty">Ninguna factura importada todavía</div>'}</div>
+  <p class="note">Consejo: importa las facturas de la más antigua a la más reciente. Cada factura marca como realizadas las operaciones del plan y reinicia el desgaste de los componentes sustituidos; revisa siempre la lectura antes de guardar.</p>`;
 };
 
 /* Botón + y arranque */
