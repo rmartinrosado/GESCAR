@@ -2549,6 +2549,80 @@
       "id_import": "feuvert-VE2-1071074"
     },
     {
+      "id_import": "ebay-11-14891-07365",
+      "vehiculo": "Citroën Xsara Picasso",
+      "modelo": "Citroën Xsara Picasso (N68)",
+      "matricula": null,
+      "bastidor": null,
+      "taller": "Compra en eBay (vendedor particular) · montaje propio",
+      "nif_taller": null,
+      "direccion_taller": null,
+      "telefono_taller": null,
+      "numero": "eBay 11-14891-07365",
+      "fecha": "2026-07-13",
+      "km": 316700,
+      "tipo_mantenimiento": "correctivo",
+      "titulo": "Sustitución del electroventilador del radiador",
+      "lineas": [
+        {
+          "descripcion": "Electroventilador Citroën Xsara Picasso 1.6 HDi (ref. 1831237016, usado; artículo eBay 136992653778)",
+          "referencia": "1831237016",
+          "cantidad": 1,
+          "precio_unitario": 26.67,
+          "descuento_pct": null,
+          "importe": 26.67,
+          "tipo": "pieza",
+          "accion": "sustitucion",
+          "sistema": "Refrigeración",
+          "operacion_plan": null,
+          "componentes": []
+        },
+        {
+          "descripcion": "Envío 48 h",
+          "referencia": "",
+          "cantidad": 1,
+          "precio_unitario": 0,
+          "descuento_pct": null,
+          "importe": 0,
+          "tipo": "tasa",
+          "accion": "otro",
+          "sistema": "Otros",
+          "operacion_plan": null,
+          "componentes": []
+        }
+      ],
+      "base_imponible": 26.67,
+      "iva_pct": 21,
+      "iva_importe": 5.6,
+      "total": 32.27,
+      "forma_pago": "eBay",
+      "observaciones": "Pedido eBay del 13/07/2026: electroventilador para Xsara Picasso 1.6 HDi 90 Exclusive. Sustituido según el usuario a los «295.000 km».",
+      "averia_reparada": "Electroventilador del radiador averiado",
+      "datos_vehiculo": {
+        "bastidor": null,
+        "matricula": null,
+        "aceite_especificacion": null,
+        "capacidad_aceite_l": null,
+        "neumaticos_medida": null,
+        "itv_proxima": null,
+        "motor": null
+      },
+      "proxima_revision": {
+        "km": null,
+        "fecha": null,
+        "texto": null
+      },
+      "nuevas_operaciones": [],
+      "recomendaciones": [],
+      "mediciones": [],
+      "confianza": 0.95,
+      "dudas": [
+        "Kilómetros: indicaste 295.000, pero el pedido es del 13/07/2026 y en mayo de 2026 el coche ya tenía 314.859 km. Se usan 316.700 km (estimados para julio de 2026). Si el cambio fue en otra fecha, corrige fecha y km aquí.",
+        "El anuncio es para la versión 1.6 HDi 90; tu motor es el 9HZ de 110 CV. Si el ventilador funciona bien, no hay problema.",
+        "No hay mano de obra: si lo montó un taller, añade una línea con su importe."
+      ]
+    },
+    {
       "id_import": "aurgi-F2607C78000578",
       "vehiculo": "Citroën Xsara Picasso",
       "modelo": "Citroën Xsara Picasso (N68)",
