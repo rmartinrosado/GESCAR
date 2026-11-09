@@ -1330,7 +1330,7 @@ views.inicio = v => {
   <div class="qa rv">
     <button onclick="formService()"><span class="tile">${ico('wrench')}</span>Intervención</button>
     <button onclick="formFault()"><span class="tile">${ico('alert')}</span>Avería</button>
-    <button onclick="location.hash='#facturas'"><span class="tile">${ico('doc')}</span>Facturas</button>
+    <button onclick="captureInvoice()"><span class="tile">${ico('cam')}</span>Factura</button>
     <button onclick="formExpense()"><span class="tile">${ico('euro')}</span>Gasto</button>
   </div>
   ${warn.map(w => `<div class="warnbox rv">${ico('spark')}<div>${w}</div></div>`).join('')}
@@ -1480,7 +1480,7 @@ views.componentes = v => {
 views.mas = v => `<h2>Más</h2><p class="sub">Herramientas y configuración</p><div class="mgrid">
   ${[['facturas', 'doc', 'Facturas de taller', 'Importar y completar el plan'], ['vehiculos', 'car', 'Vehículos', 'Fichas, fotos, ITV'], ['km', 'km', 'Kilometraje', 'Lecturas y uso'], ['componentes', 'tire', 'Componentes', 'Desgaste predictivo'], ['gastos', 'euro', 'Gastos', 'Coste y €/km'], ['informes', 'pdf', 'Informes PDF', 'Historial completo'], ['copias', 'cloud', 'Copias', 'Exportar y restaurar'], ['ajustes', 'bell', 'Avisos', 'Notificaciones y umbrales']]
     .map(([h, i, t, s]) => `<a href="#${h}" class="rv"><span class="tile">${ico(i)}</span><div class="t">${t}</div><div class="s">${s}</div></a>`).join('')}</div>
-  <p class="note" style="text-align:center;margin-top:18px;letter-spacing:.2em">GESCAR · V2.2</p>`;
+  <p class="note" style="text-align:center;margin-top:18px;letter-spacing:.2em">GESCAR · V2.3</p>`;
 
 views.vehiculos = () => `<h2>Vehículos</h2><p class="sub">Cada vehículo con su historial independiente</p>${S.vehicles.map(v => `<div class="card vcard rv" onclick="formVehicle(S.vehicles.find(x=>x.id==='${v.id}'))">
   <div class="vimg">${photoLayer(v)}${carSVG(v, {suf: 'v'})}</div>
@@ -1564,7 +1564,13 @@ Para CADA línea de la factura indica:
 - componente_ids: ids de componentes controlados que se SUSTITUYEN con esta línea (neumáticos por posición, pastillas por eje, batería), o [].
 
 Devuelve SOLO JSON con esta forma:
-{"facturas":[{"vehiculo_id":"...","matricula":"...","bastidor":null,"taller":"...","nif_taller":null,"direccion_taller":null,"telefono_taller":null,"numero":"...","fecha":"AAAA-MM-DD","km":12345,"tipo_mantenimiento":"preventivo|correctivo|predictivo","titulo":"resumen corto de los trabajos","lineas":[{...}],"base_imponible":0,"iva_pct":21,"iva_importe":0,"total":0,"forma_pago":null,"observaciones":"textos del taller, avisos, recomendaciones y próximas revisiones indicadas","averia_reparada":"si es correctivo: síntoma/avería que se repara, si no null","confianza":0.0,"dudas":["datos ilegibles o dudosos"]}]}`;
+{"facturas":[{"vehiculo_id":"...","matricula":"...","bastidor":null,"taller":"...","nif_taller":null,"direccion_taller":null,"telefono_taller":null,"numero":"...","fecha":"AAAA-MM-DD","km":12345,"tipo_mantenimiento":"preventivo|correctivo|predictivo","titulo":"resumen corto de los trabajos","lineas":[{...}],"base_imponible":0,"iva_pct":21,"iva_importe":0,"total":0,"forma_pago":null,"observaciones":"textos del taller, avisos, recomendaciones y próximas revisiones indicadas","averia_reparada":"si es correctivo: síntoma/avería que se repara, si no null",
+"datos_vehiculo":{"bastidor":null,"matricula":null,"aceite_especificacion":"p.ej. 5W-40 MB 229.5, si se deduce de la línea de aceite","capacidad_aceite_l":null,"neumaticos_medida":"p.ej. 225/45 R17 si aparece","itv_proxima":"AAAA-MM-DD si es una factura/informe de ITV"},
+"proxima_revision":{"km":null,"fecha":null,"texto":"si el taller indica cuándo volver (pegatina, nota, 'próximo cambio a…')"},
+"nuevas_operaciones":[{"nombre":"operación de mantenimiento periódico realizada que NO existe en el plan del vehículo","sistema":"...","intervalo_km":null,"intervalo_meses":null,"motivo":"por qué conviene controlarla"}],
+"recomendaciones":[{"texto":"trabajo que el taller recomienda o detecta y NO se ha hecho (desgaste, fugas, holguras…)","sistema":"...","urgencia":"baja|media|alta"}],
+"confianza":0.0,"dudas":["datos ilegibles o dudosos"]}]}
+Para intervalos de nuevas operaciones usa valores habituales y conservadores del fabricante para ese motor. Si la foto es de un ticket, presupuesto u orden de reparación, trátalo igual pero indícalo en "titulo".`;
 }
 const fileToB64 = f => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(f); });
 async function prepImage(file, max = 2200) {
@@ -1599,6 +1605,28 @@ async function gemini(parts, onTry) {
   throw new Error('Ningún modelo de Gemini disponible. ' + (last || ''));
 }
 
+/* ---------- Ajustes adicionales detectados en la factura ---------- */
+function vFills(F) {
+  const v = S.vehicles.find(x => x.id === F.vid); if (!v) return []; const d = F.datosV || {}; const out = [];
+  if (d.bastidor && !v.vin) out.push({k: 'vin', l: 'Bastidor', v: d.bastidor});
+  if ((d.matricula || F.matricula) && !v.matricula) out.push({k: 'matricula', l: 'Matrícula', v: d.matricula || F.matricula});
+  if (d.aceite_especificacion && !/^p\.ej/i.test(d.aceite_especificacion) && !v.aceite) out.push({k: 'aceite', l: 'Aceite motor', v: d.aceite_especificacion + (d.capacidad_aceite_l ? ' · ' + d.capacidad_aceite_l + ' L' : '')});
+  if (d.neumaticos_medida && !/^p\.ej/i.test(d.neumaticos_medida) && !v.neumaticos) out.push({k: 'neumaticos', l: 'Medida neumáticos', v: d.neumaticos_medida});
+  if (d.itv_proxima && /^\d{4}-\d\d-\d\d$/.test(d.itv_proxima) && (!v.itv || d.itv_proxima > v.itv)) out.push({k: 'itv', l: 'Próxima ITV', v: d.itv_proxima});
+  return out;
+}
+function extrasHTML(F) {
+  const vf = vFills(F); const p = F.prox || {};
+  if (!vf.length && !F.nuevas.length && !F.recs.length && !(p.km || p.fecha || p.texto)) return '';
+  const chk = (key, on, txt, sub = '') => `<label class="chk" style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)"><input type="checkbox" data-x="${key}" ${on !== false ? 'checked' : ''} style="margin-top:2px"><span>${txt}${sub ? `<br><span class="note">${sub}</span>` : ''}</span></label>`;
+  return `<h3>Ajustes adicionales detectados</h3><div class="card">
+    ${vf.map(x => chk('v:' + x.k, F.vOn[x.k], `Completar ficha · <b>${x.l}</b>: ${esc(String(x.k === 'itv' ? fDate(x.v) : x.v))}`)).join('')}
+    ${F.nuevas.map((o, i) => `${chk('n:' + i, o.on, `Añadir al plan: <b>${esc(o.nombre)}</b>`, esc(o.motivo || ''))}${o.on ? `<div class="f2" style="gap:6px;margin:0 0 8px 30px"><input class="mini" data-nf="${i}:intervalo_km" inputmode="numeric" placeholder="Cada km" value="${o.intervalo_km ?? ''}"><input class="mini" data-nf="${i}:intervalo_meses" inputmode="numeric" placeholder="Cada meses" value="${o.intervalo_meses ?? ''}"></div>` : ''}`).join('')}
+    ${F.recs.map((r, i) => chk('r:' + i, r.on, `Crear aviso: ${esc(r.texto)}`, `Recomendación del taller · urgencia ${esc(r.urgencia || 'media')}`)).join('')}
+    ${(p.km || p.fecha || p.texto) ? chk('p', F.proxOn, `Próxima revisión indicada por el taller: <b>${[p.km ? fKm(num(p.km)) : '', p.fecha ? fDate(p.fecha) : ''].filter(Boolean).join(' / ') || esc(p.texto)}</b>`, 'Se anota en el historial y como aviso con su fecha/km') : ''}
+  </div>`;
+}
+
 /* ---------- Normalización y revisión ---------- */
 function normFactura(f) {
   const vname = String(f.vehiculo || f.modelo || '').toLowerCase();
@@ -1620,7 +1648,10 @@ function normFactura(f) {
   });
   return {vid, matricula: f.matricula || '', taller: f.taller || '', nif: f.nif_taller || '', direccion: f.direccion_taller || '', telefono: f.telefono_taller || '', numero: f.numero || '', fecha: f.fecha || todayISO(), km: num(f.km),
     tipo: ['preventivo', 'correctivo', 'predictivo'].includes(f.tipo_mantenimiento) ? f.tipo_mantenimiento : 'preventivo', titulo: f.titulo || 'Factura ' + (f.numero || ''),
-    lineas, base: dec(f.base_imponible), ivaPct: dec(f.iva_pct), iva: dec(f.iva_importe), total: dec(f.total), observaciones: f.observaciones || '', averia: f.averia_reparada || '', confianza: f.confianza, dudas: f.dudas || []};
+    lineas, base: dec(f.base_imponible), ivaPct: dec(f.iva_pct), iva: dec(f.iva_importe), total: dec(f.total), observaciones: f.observaciones || '', averia: f.averia_reparada || '', confianza: f.confianza, dudas: f.dudas || [],
+    datosV: f.datos_vehiculo || {}, prox: f.proxima_revision || {},
+    nuevas: (f.nuevas_operaciones || []).filter(o => o && o.nombre && !S.plan.some(p => p.vehicleId === vid && p.nombre.toLowerCase() === String(o.nombre).toLowerCase())).map(o => ({...o, on: true})),
+    recs: (f.recomendaciones || []).filter(r => r && r.texto).map(r => ({...r, on: true})), vOn: {}};
 }
 function checksFactura(F) {
   const w = []; const v = S.vehicles.find(x => x.id === F.vid);
@@ -1666,8 +1697,12 @@ function reviewFactura(F, docs, queue) {
     <div class="f2" style="grid-template-columns:1fr 1fr 1fr"><div class="fld"><label>Base</label><input data-h="base" inputmode="decimal" value="${F.base ?? ''}"></div><div class="fld"><label>IVA €</label><input data-h="iva" inputmode="decimal" value="${F.iva ?? ''}"></div><div class="fld"><label>Total pagado</label><input data-h="total" inputmode="decimal" value="${F.total ?? ''}"></div></div>
     <div class="fld"><label>Observaciones y recomendaciones del taller</label><textarea data-h="observaciones">${esc(F.observaciones)}</textarea></div>
     ${F.tipo === 'correctivo' ? `<div class="fld"><label>Avería reparada</label><input data-h="averia" value="${esc(F.averia)}" placeholder="Se registrará como avería resuelta"></div>` : ''}
+    ${extrasHTML(F)}
     <div class="card" style="background:rgba(95,211,154,.06);border-color:rgba(95,211,154,.25)"><div class="eyebrow" style="color:var(--ok)">Al guardar se actualizará</div>
       <div style="margin-top:8px;font-size:13.5px">${ops.length ? ops.map(id => `✓ ${esc(S.plan.find(p => p.id === id)?.nombre || '')}`).join('<br>') : 'Ninguna operación del plan'}${cps.length ? '<br><br>' + cps.map(id => `↺ ${esc(S.components.find(c => c.id === id)?.nombre || '')} (desgaste a 0%)`).join('<br>') : ''}
+      ${vFills(F).filter(x => F.vOn[x.k] !== false).map(x => `<br>✎ Ficha: ${x.l} → ${esc(String(x.v))}`).join('')}
+      ${F.nuevas.filter(o => o.on).map(o => `<br>＋ Nueva operación en el plan: ${esc(o.nombre)}`).join('')}
+      ${F.recs.filter(r => r.on).map(r => `<br>⚠︎ Aviso: ${esc(r.texto)}`).join('')}
       <br><br>Historial y gastos: ${fEur(F.total ?? F.lineas.reduce((a, l) => a + l.importe, 0))}${docs.length ? ` · ${docs.length} documento(s) adjunto(s)` : ''}</div></div>
     <button class="btn block" id="fxSave" style="margin-top:6px">${ico('check', 2)} Guardar factura</button>
     ${queue && queue.n > 1 ? `<button class="btn sec block" id="fxSkip" style="margin-top:8px">Saltar esta factura</button>` : ''}`;
@@ -1683,12 +1718,15 @@ function reviewFactura(F, docs, queue) {
     body.querySelectorAll('[data-li]').forEach(card => { const l = F.lineas[+card.dataset.li];
       card.querySelectorAll('[data-l]').forEach(el => el.onchange = () => { const k = el.dataset.l; l[k] = ['cantidad', 'importe'].includes(k) ? dec(el.value) : (el.value || (k === 'plan_id' ? null : '')); if (['plan_id', 'importe', 'tipo'].includes(k)) rerender(); });
       card.querySelectorAll('[data-c]').forEach(el => el.onchange = () => { const id = el.dataset.c; l.componente_ids = el.checked ? [...new Set([...(l.componente_ids || []), id])] : (l.componente_ids || []).filter(x => x !== id); rerender(); }); });
+    body.querySelectorAll('[data-x]').forEach(el => el.onchange = () => { const [g, k] = el.dataset.x.split(':');
+      if (g === 'v') F.vOn[k] = el.checked; else if (g === 'n') F.nuevas[+k].on = el.checked; else if (g === 'r') F.recs[+k].on = el.checked; else if (g === 'p') F.proxOn = el.checked; rerender(); });
+    body.querySelectorAll('[data-nf]').forEach(el => el.onchange = () => { const [i, k] = el.dataset.nf.split(':'); F.nuevas[+i][k] = k === 'nombre' ? el.value : num(el.value); });
     body.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { F.lineas.splice(+b.dataset.del, 1); rerender(); });
     body.querySelector('#fxAdd').onclick = () => { F.lineas.push({descripcion: '', referencia: '', cantidad: 1, importe: 0, tipo: 'pieza', accion: 'sustitucion', plan_id: null, componente_ids: []}); rerender(); };
     body.querySelector('#fxSave').onclick = async () => {
       if (F.km == null) { toast('Indica el kilometraje de la factura'); return; }
       if (!F.fecha) { toast('Indica la fecha'); return; }
-      await saveFactura(F, docs); s.close(); toast('Factura importada'); queue && queue.next ? queue.next() : (location.hash = '#facturas', render());
+      await saveFactura(F, docs); queue && queue.onSaved && queue.onSaved(); s.close(); toast('Factura importada'); queue && queue.next ? queue.next() : (location.hash = '#facturas', render());
     };
     const sk = body.querySelector('#fxSkip'); if (sk) sk.onclick = () => { s.close(); queue.next ? queue.next() : render(); };
   };
@@ -1712,9 +1750,18 @@ async function saveFactura(F, docs) {
   }
   // Avería reparada
   if (F.tipo === 'correctivo' && F.averia) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: F.averia, gravedad: 'media', estado: 'resuelta', diagnostico: '', solucion: F.titulo, serviceId: rec.id, fotos: []});
-  // Datos de la ficha si faltaban
+  // Ajustes adicionales
   const v = S.vehicles.find(x => x.id === F.vid);
-  if (v && !v.matricula && F.matricula) { v.matricula = F.matricula; await save('vehicles', v); }
+  let vch = false; for (const x of vFills(F)) if (F.vOn[x.k] !== false) { v[x.k] = x.v; vch = true; }
+  if (vch) await save('vehicles', v);
+  for (const o of F.nuevas.filter(o => o.on)) {
+    if (!o.intervalo_km && !o.intervalo_meses) o.intervalo_meses = 12;
+    await save('plan', {id: uid(), vehicleId: F.vid, nombre: o.nombre, sistema: o.sistema || 'Otros', intKm: num(o.intervalo_km), intMeses: num(o.intervalo_meses), notas: (o.motivo || '') + ' · Añadida desde factura ' + (F.numero || ''), activo: true, baseFecha: F.fecha, baseKm: F.km});
+  }
+  for (const r of F.recs.filter(r => r.on)) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: 'Recomendación del taller: ' + r.texto, sistema: r.sistema || 'Otros', gravedad: r.urgencia === 'alta' ? 'grave' : r.urgencia === 'baja' ? 'leve' : 'media', estado: 'diagnostico', sintomas: `Detectado por ${F.taller || 'el taller'} en la factura ${F.numero || ''}`, fotos: []});
+  const p = F.prox || {};
+  if (F.proxOn !== false && (p.km || p.fecha || p.texto)) await save('faults', {id: uid(), vehicleId: F.vid, fecha: F.fecha, km: F.km, titulo: 'Próxima revisión según taller: ' + [p.km ? fKm(num(p.km)) : '', p.fecha ? fDate(p.fecha) : ''].filter(Boolean).join(' / ') + (p.texto ? ' · ' + p.texto : ''), gravedad: 'leve', estado: 'diagnostico', sintomas: 'Indicado en la factura ' + (F.numero || ''), fotos: []});
+  // Datos de la ficha si faltaban
   if (v && v.kmInicial == null) { v.kmInicial = F.km; v.fechaCompra = v.fechaCompra || F.fecha; await save('vehicles', v); }
 }
 async function saveDoc(file) {
@@ -1724,7 +1771,28 @@ async function saveDoc(file) {
 async function openDoc(id) { const u = await photoURL(id); if (u) window.open(u, '_blank'); }
 
 /* ---------- Flujo de importación ---------- */
-async function importInvoices(files) {
+function captureInvoice() {
+  if (!curV()) { formVehicle(); return; }
+  const pages = []; let modo = 'una';
+  const s = sheet({title: 'Fotografiar factura', body: '<div id="cpB"></div>'});
+  const b = s.querySelector('#cpB');
+  const draw = () => {
+    b.innerHTML = `<p class="note" style="margin-top:0">Encuadra la factura completa, plana y con buena luz. Asegúrate de que se leen la tabla de líneas, los km y el total.</p>
+      <div class="seg"><button class="${modo === 'una' ? 'on' : ''}" data-m="una">Páginas de una factura</button><button class="${modo === 'varias' ? 'on' : ''}" data-m="varias">Varias facturas</button></div>
+      <div class="thumbs" style="gap:10px;margin:4px 0 14px">${pages.map((p, i) => `<div class="ph" style="text-align:center"><div style="width:84px;height:110px;border-radius:12px;border:1px solid var(--line);overflow:hidden;background:#111;display:flex;align-items:center;justify-content:center">${p.url ? `<img src="${p.url}" style="width:100%;height:100%;object-fit:cover;border:0;border-radius:0">` : ico('pdf')}</div><span class="note">${modo === 'una' ? 'Pág.' : 'Fact.'} ${i + 1}</span><button data-rm="${i}">✕</button></div>`).join('')}
+      ${!pages.length ? `<div class="empty" style="width:100%;padding:16px 0">${ico('doc')}<br>Aún no hay fotos</div>` : ''}</div>
+      <div class="grid2"><label class="btn">${ico('cam')} ${pages.length ? 'Otra foto' : 'Hacer foto'}<input type="file" accept="image/*" capture="environment" hidden data-in></label>
+      <label class="btn sec">${ico('doc')} Galería / PDF<input type="file" accept="image/*,application/pdf" multiple hidden data-in></label></div>
+      <button class="btn block" id="cpGo" style="margin-top:12px;${pages.length ? '' : 'opacity:.45;pointer-events:none'}">${ico('spark')} Analizar con IA${pages.length ? ` (${pages.length})` : ''}</button>
+      <p class="note" style="margin-top:10px">${S.meta.gemKey ? 'Lector IA: Google Gemini · ' + esc(S.meta.gemModel || GEM_MODELS[0]) : '<a href="#" onclick="gemSetup();return false">Configura el lector IA (gratis) antes de analizar</a>'}</p>`;
+    b.querySelectorAll('[data-m]').forEach(x => x.onclick = () => { modo = x.dataset.m; draw(); });
+    b.querySelectorAll('[data-rm]').forEach(x => x.onclick = () => { pages.splice(+x.dataset.rm, 1); draw(); });
+    b.querySelectorAll('[data-in]').forEach(inp => inp.onchange = () => { for (const f of inp.files) pages.push({file: f, url: /^image\//.test(f.type) ? URL.createObjectURL(f) : ''}); draw(); });
+    b.querySelector('#cpGo').onclick = () => { s.close(); const fs = pages.map(p => p.file); modo === 'una' ? importInvoices(fs) : importInvoices(fs, true); };
+  };
+  draw();
+}
+async function importInvoices(files, separate) {
   if (!files || !files.length) return;
   if (!S.meta.gemKey) { gemSetup(() => importInvoices(files)); return; }
   files = [...files];
@@ -1745,21 +1813,60 @@ async function importInvoices(files) {
       docs.push(await saveDoc(f));
     }
     if (parts.length < 2) throw new Error('Formato no admitido. Usa fotos (JPG/PNG/HEIC) o PDF.');
-    st('Leyendo la factura con IA…'); bar(55);
-    const out = await gemini(parts, m => s.querySelector('#fxSt2').textContent = 'Modelo: ' + m);
+    let list = [];
+    if (separate) {
+      for (let k = 1; k < parts.length; k++) {
+        st(`Leyendo factura ${k} de ${parts.length - 1} con IA…`); bar(30 + 65 * k / (parts.length - 1));
+        const out = await gemini([parts[0], parts[k]], m => s.querySelector('#fxSt2').textContent = 'Modelo: ' + m);
+        const fl = (out.facturas || (Array.isArray(out) ? out : [out])).filter(Boolean); fl.forEach(x => x._doc = k - 1); list.push(...fl);
+      }
+    } else {
+      st('Leyendo la factura con IA…'); bar(55);
+      const out = await gemini(parts, m => s.querySelector('#fxSt2').textContent = 'Modelo: ' + m);
+      list = (out.facturas || (Array.isArray(out) ? out : [out])).filter(Boolean);
+    }
     bar(100);
-    const list = (out.facturas || (Array.isArray(out) ? out : [out])).filter(Boolean);
     if (!list.length) throw new Error('No se ha encontrado ninguna factura en el documento.');
     s.close();
-    runQueue(list.map(normFactura), docs);
+    const norm = list.map(x => { const F = normFactura(x); F._doc = x._doc; return F; });
+    runQueue(norm, separate ? norm.map(F => docs[F._doc]) : docs);
   } catch (e) {
     console.error(e);
     s.querySelector('.sheet-b').innerHTML = `<div class="warnbox">${ico('alert')}<div>${esc(e.message === 'NOKEY' ? 'Falta la clave de Gemini.' : e.message)}</div></div><button class="btn sec block" onclick="this.closest('.sheet-bg').remove();gemSetup()">Configurar lector IA</button>`;
   }
 }
+function snapshot() { const o = {}; S.vehicles.forEach(v => { const a = alerts(v); o[v.id] = {h: health(v), bad: a.filter(x => x.status === 'bad').length, warn: a.filter(x => x.status === 'warn').length, sin: of('plan', v).filter(p => p.activo !== false && !lastDone(p)).length}; }); return o; }
 function runQueue(list, docs) {
-  let i = 0; const next = () => { if (i >= list.length) { location.hash = '#facturas'; render(); return; } const F = list[i]; reviewFactura(F, i === 0 ? docs : [], {i, n: list.length, next: () => { i++; next(); }}); };
+  const aligned = list.length === docs.length; list.forEach((F, k) => F._d = aligned ? docs[k] : null);
+  list.sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));   // de la más antigua a la más reciente
+  const before = snapshot(), nServ = S.services.length, nPlan = S.plan.length, nAv = S.faults.length;
+  const touched = new Set(); let saved = 0;
+  let i = 0; const next = () => {
+    if (i >= list.length) { if (saved) showSummary(before, touched, S.services.slice(nServ), S.plan.slice(nPlan), S.faults.slice(nAv)); else { location.hash = '#facturas'; render(); } return; }
+    const F = list[i]; const dd = aligned ? [F._d] : (i === 0 ? docs : []);
+    reviewFactura(F, dd.filter(Boolean), {i, n: list.length, next: () => { i++; next(); }, onSaved: () => { saved++; touched.add(F.vid); }});
+  };
   next();
+}
+function showSummary(before, touched, svcs, newPlan, newFaults) {
+  const after = snapshot(); location.hash = '#facturas'; render();
+  const ops = [...new Set(svcs.flatMap(s => s.planIds))].map(id => S.plan.find(p => p.id === id)).filter(Boolean);
+  const comps = S.components.filter(c => svcs.some(s => s.fecha === c.fechaMontaje && s.vehicleId === c.vehicleId && (s.factura?.lineas || []).some(l => (l.componente_ids || []).includes(c.id))));
+  const body = [...touched].map(vid => { const v = S.vehicles.find(x => x.id === vid); const b = before[vid] || {}, a = after[vid] || {};
+    const arrow = (x, y, goodDown) => `${x ?? '—'} → <b style="color:${y === x ? 'inherit' : ((y < x) === goodDown ? 'var(--ok)' : 'var(--bad)')}">${y ?? '—'}</b>`;
+    return `<div class="card"><div class="eyebrow" style="color:var(--gold)">${esc(v.alias)}</div>
+      <div class="health" style="margin-top:10px">${ringHTML(a.h, 96)}<div class="hstats">
+        <div class="hstat"><span>Salud</span><b>${arrow(b.h, a.h, false)}</b></div>
+        <div class="hstat"><span>Vencidos</span><b>${arrow(b.bad, a.bad, true)}</b></div>
+        <div class="hstat"><span>Próximos</span><b>${arrow(b.warn, a.warn, true)}</b></div>
+        <div class="hstat"><span>Sin datos</span><b>${arrow(b.sin, a.sin, true)}</b></div></div></div></div>`; }).join('');
+  const s = sheet({title: 'Plan de mantenimiento actualizado', body: `<p class="sub" style="margin-top:0">${svcs.length} factura(s) analizada(s) e incorporada(s)</p>${body}
+    ${ops.length ? `<h3>Operaciones actualizadas</h3><div class="card">${ops.map(p => { const st = planStatus(p); return `<div class="item"><span class="tile ${st.status}" style="width:34px;height:34px;border-radius:10px">${ico(iconFor(p.nombre, p.sistema))}</span><div class="grow"><div class="t" style="font-size:14px">${esc(p.nombre)}</div><div class="s">Última ${fDate(st.ld?.fecha)} · ${fKm(st.ld?.km)} → próxima ${fDate(st.estFecha)}</div></div><span class="pill ${st.status}">${STATUS[st.status]}</span></div>`; }).join('')}</div>` : ''}
+    ${comps.length ? `<h3>Componentes renovados</h3><div class="card">${comps.map(c => `<div class="item"><span class="tile ok" style="width:34px;height:34px;border-radius:10px">${ico(iconFor(c.nombre))}</span><div class="grow"><div class="t" style="font-size:14px">${esc(c.nombre)}</div><div class="s">Montado ${fDate(c.fechaMontaje)} · ${fKm(c.kmMontaje)}</div></div></div>`).join('')}</div>` : ''}
+    ${newPlan.length ? `<h3>Añadido al plan</h3><div class="card">${newPlan.map(p => `<div class="item"><div class="grow"><div class="t" style="font-size:14px">${esc(p.nombre)}</div><div class="s">Cada ${[p.intKm ? fKm(p.intKm) : '', p.intMeses ? p.intMeses + ' meses' : ''].filter(Boolean).join(' / ')}</div></div></div>`).join('')}</div>` : ''}
+    ${newFaults.filter(f => f.estado !== 'resuelta').length ? `<h3>Avisos creados</h3><div class="card">${newFaults.filter(f => f.estado !== 'resuelta').map(f => `<div class="item"><span class="tile warn" style="width:34px;height:34px;border-radius:10px">${ico('alert')}</span><div class="grow"><div class="t" style="font-size:13.5px">${esc(f.titulo)}</div></div></div>`).join('')}</div>` : ''}
+    <div class="grid2"><button class="btn sec" onclick="this.closest('.sheet-bg').remove();location.hash='#plan'">Ver plan</button><button class="btn" onclick="this.closest('.sheet-bg').remove();captureInvoice()">${ico('cam')} Otra factura</button></div>`});
+  animateIn(s);
 }
 async function importInvoiceJSON(file) {
   let j; try { j = JSON.parse(await file.text()); } catch (e) { toast('Archivo no válido'); return; }
@@ -1789,9 +1896,9 @@ views.facturas = v => {
   const plan = of('plan', v).filter(p => p.activo !== false).map(p => ({p, ld: lastDone(p)}));
   return `<h2>Facturas de taller</h2><p class="sub">${esc(v.alias)} · importa facturas y GESCAR completa el plan</p>
   <div class="card rv" style="background:linear-gradient(135deg,rgba(201,169,110,.16),rgba(201,169,110,.03));border-color:rgba(201,169,110,.3)">
-    <div class="row"><span class="tile">${ico('doc')}</span><div class="grow"><div style="font-weight:600">Importar factura</div><div class="note">Foto o PDF. Varias páginas de una misma factura: selecciónalas juntas.</div></div></div>
+    <div class="row"><span class="tile">${ico('doc')}</span><div class="grow"><div style="font-weight:600">Importar factura</div><div class="note">Haz la foto y la IA lee fechas, km, piezas, referencias e importes y ajusta todo el plan.</div></div></div>
     <div class="grid2" style="margin-top:14px">
-      <label class="btn">${ico('cam')} Foto<input type="file" accept="image/*" multiple hidden onchange="importInvoices(this.files);this.value=''"></label>
+      <button class="btn" onclick="captureInvoice()">${ico('cam')} Fotografiar</button>
       <label class="btn sec">${ico('pdf')} PDF / archivo<input type="file" accept="application/pdf,image/*" multiple hidden onchange="importInvoices(this.files);this.value=''"></label>
     </div>
     <div class="row" style="margin-top:12px;justify-content:space-between"><a href="#" class="note" onclick="gemSetup();return false">${S.meta.gemKey ? '✓ Lector IA configurado' : '⚙︎ Configurar lector IA (gratis)'}</a>
